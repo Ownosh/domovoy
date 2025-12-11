@@ -1,0 +1,147 @@
+:root{
+	--bg:#f5f7fb;
+	--card:#ffffff;
+	--muted:#6b7280;
+	--primary:#2563eb;
+	--primary-600:#1e40af;
+	--accent:#06b6d4;
+	--danger:#dc2626;
+	--success:#16a34a;
+	--glass: rgba(255,255,255,0.6);
+	--radius:10px;
+	--shadow: 0 6px 20px rgba(16,24,40,0.08);
+	--max-width:1200px;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%;}
+body{
+	margin:0;
+	font-family: 'Inter', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+	background: linear-gradient(180deg, #f7fbff 0%, var(--bg) 100%);
+	color:#0f172a;
+	-webkit-font-smoothing:antialiased;
+	-moz-osx-font-smoothing:grayscale;
+}
+
+/* Google Font import (fallback if not loaded via HTML) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+
+.container{max-width:var(--max-width);margin:0 auto;padding:24px}
+
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;border:0;cursor:pointer;font-weight:600}
+.btn:active{transform:translateY(1px)}
+.btn{ text-decoration: none; }
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 6px 18px rgba(37,99,235,0.18)}
+.btn-primary:hover{background:var(--primary-600)}
+.btn-secondary{background:transparent;border:1px solid rgba(15,23,42,0.08);color:var(--muted)}
+.btn-icon{padding:6px 8px;border-radius:6px}
+
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px}
+.card-header{display:flex;align-items:center;gap:12px;padding:18px 20px;border-bottom:1px solid rgba(15,23,42,0.04)}
+.card-header h3{margin:0;font-size:18px}
+.card-header .btn{margin-left:auto}
+.card-header > span{margin-left:8px;color:var(--muted);font-weight:600}
+/* Header meta (compact pill) - consistent small badge next to titles */
+.card-header .meta,
+.card-header > span.meta,
+.card-header > div.meta {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	margin-left: 8px;
+	font-weight: 600;
+	font-size: 13px;
+	color: var(--muted);
+}
+
+/* Number/count inside header meta shown as a compact pill */
+.card-header .meta .count,
+.card-header > span.meta .count,
+.card-header > div.meta .count {
+	display:inline-block;
+	background: rgba(37,99,235,0.10);
+	color: var(--primary);
+	padding: 4px 8px;
+	border-radius: 999px;
+	font-weight: 800;
+	font-size: 13px;
+}
+
+/* Optional secondary label inside meta */
+.card-header .meta .label {
+	color: var(--muted);
+	font-weight: 600;
+	font-size: 13px;
+}
+.card-body{padding:18px}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:transparent}
+.topbar h1{margin:0;font-size:20px}
+.topbar .topbar-actions{display:flex;gap:12px}
+
+.sidebar{width:260px;background:linear-gradient(180deg,#ffffff,#fbfdff);border-right:1px solid rgba(15,23,42,0.04);padding:20px;min-height:100vh}
+.sidebar-header h2{margin:0;font-size:20px}
+.sidebar-nav{list-style:none;padding:10px 0;margin:18px 0}
+.sidebar-nav li{margin:6px 0}
+.sidebar-nav a{display:block;padding:10px 12px;border-radius:8px;color:var(--muted);text-decoration:none}
+.sidebar-nav a:hover{background:var(--glass);color:var(--primary)}
+.sidebar-nav a.active{background:linear-gradient(90deg,rgba(37,99,235,0.08),transparent);color:var(--primary);font-weight:600}
+
+.sidebar-footer{position:absolute;bottom:20px;left:20px;right:20px}
+.user-info{display:flex;gap:12px;align-items:center}
+.user-avatar{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--primary));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+
+.main-content{flex:1;padding:20px}
+.dashboard{display:flex;gap:20px}
+
+.table-container{overflow:auto}
+table{width:100%;border-collapse:collapse;background:transparent}
+thead th{background:transparent;text-align:left;padding:12px 10px;color:var(--muted);font-weight:600;border-bottom:1px solid rgba(15,23,42,0.06)}
+tbody td{padding:12px 10px;border-bottom:1px solid rgba(15,23,42,0.04)}
+
+.badge{display:inline-block;padding:6px 8px;border-radius:999px;font-size:12px;color:#fff}
+.badge-info{background:#0ea5e9}
+.badge-warning{background:#f59e0b}
+.badge-secondary{background:#94a3b8}
+.badge-danger{background:var(--danger)}
+
+.modal{display:none;position:fixed;inset:0;background:rgba(2,6,23,0.45);z-index:1000;align-items:center;justify-content:center;padding:24px}
+.modal.open{display:flex}
+.modal-content{width:100%;max-width:760px;background:var(--card);border-radius:12px;padding:18px;box-shadow:0 18px 50px rgba(2,6,23,0.2)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.modal-close{background:transparent;border:0;font-size:22px;cursor:pointer}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
+
+.form-group{margin-bottom:12px}
+.form-group label{display:block;margin-bottom:6px;color:var(--muted);font-weight:600}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:linear-gradient(180deg,#fff,#fbfdff)}
+.form-group small{color:var(--muted)}
+
+.alert{padding:10px;border-radius:8px;margin:12px 0}
+.alert-info{background:#eef2ff;color:#1e3a8a}
+
+.loader{width:44px;height:44px;border-radius:50%;border:5px solid rgba(0,0,0,0.06);border-top-color:var(--primary);animation:spin 1s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Toasts */
+.toast-container{position:fixed;right:20px;bottom:20px;z-index:2000;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.toast{min-width:220px;max-width:420px;padding:12px 14px;border-radius:10px;color:#fff;box-shadow:0 8px 30px rgba(2,6,23,0.12);display:flex;gap:10px;align-items:center}
+.toast .toast-icon{font-size:18px}
+.toast.toast-success{background:var(--success)}
+.toast.toast-error{background:var(--danger)}
+.toast.toast-info{background:var(--primary)}
+.toast .toast-body{flex:1}
+.toast .toast-close{margin-left:8px;background:transparent;border:0;color:rgba(255,255,255,0.85);cursor:pointer}
+
+
+/* Responsive */
+@media (max-width:900px){
+	.sidebar{position:fixed;left:-320px;top:0;bottom:0;transition:all .25s ease;padding-top:60px}
+	.sidebar.active{left:0}
+	.dashboard{padding-left:0}
+}
+
+/* Ensure links that appear like buttons or in card headers don't show underline */
+.card-header a, .btn { text-decoration: none; }
+

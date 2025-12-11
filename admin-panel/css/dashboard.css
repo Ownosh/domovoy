@@ -1,0 +1,78 @@
+/* Dashboard specific styles */
+.mobile-menu-btn{display:none;background:transparent;border:0;font-size:20px;padding:8px}
+
+.main-content{min-height:100vh}
+
+.content{padding:8px 0}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:18px}
+.stat-card{background:var(--card);border-radius:12px;padding:14px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow)}
+.stat-card:hover{transform:translateY(-4px);transition:transform .18s ease;box-shadow:0 20px 40px rgba(16,24,40,0.08)}
+.stat-icon{width:56px;height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;flex:0 0 56px}
+.stat-info h3{margin:0;font-size:24px;font-weight:800;color:#0f172a}
+.stat-info p{margin:0;color:var(--muted);font-weight:600}
+.stat-icon.blue{background:linear-gradient(135deg,#60a5fa,#2563eb)}
+.stat-icon.green{background:linear-gradient(135deg,#34d399,#059669)}
+.stat-icon.orange{background:linear-gradient(135deg,#fb923c,#f59e0b)}
+.stat-icon.purple{background:linear-gradient(135deg,#a78bfa,#7c3aed)}
+
+
+.table-actions{display:flex;gap:8px;align-items:center}
+
+.sidebar{position:relative}
+
+.sidebar-footer{position:absolute;bottom:20px;left:20px;right:20px;background:linear-gradient(180deg,#fff,#fbfdff);border-radius:12px;padding:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.sidebar-footer .user-info{width:100%;align-items:center}
+.sidebar-footer .user-details{display:flex;flex-direction:column}
+.sidebar-footer .user-details .name{font-weight:700;color:var(--primary);font-size:14px}
+.sidebar-footer .user-details .role{font-size:13px;color:var(--muted)}
+.sidebar-footer .logout-btn{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(15,23,42,0.06);background:transparent;text-align:left;color:var(--muted);font-weight:600}
+
+/* On small screens keep footer inside flow */
+@media (max-width:900px){
+	.sidebar-footer{position:static;padding:14px;border-radius:10px;margin-top:18px}
+}
+
+/* small avatar adjustments inside footer */
+.sidebar-footer .user-avatar{width:48px;height:48px;border-radius:10px;box-shadow:0 8px 20px rgba(16,24,40,0.06);font-size:18px}
+.sidebar-footer .user-details{margin-left:8px}
+.sidebar-footer .user-info{display:flex;align-items:center;gap:10px}
+.sidebar-footer .logout-btn{background:#fff}
+
+
+.search-input{display:flex;align-items:center;gap:8px;background:var(--card);padding:8px;border-radius:10px;border:1px solid rgba(15,23,42,0.04)}
+.search-input input{border:0;outline:none;background:transparent}
+
+.status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:8px}
+.status-new{background:#0ea5e9}
+.status-inprogress{background:#f59e0b}
+.status-done{background:var(--success)}
+
+/* small helpers */
+.muted{color:var(--muted)}
+
+/* show mobile menu button on small screens */
+@media (max-width:900px){
+	.mobile-menu-btn{display:inline-flex}
+	.sidebar{position:fixed;left:-320px;top:0;bottom:0;z-index:1200;transition:left .2s}
+	.sidebar.active{left:0}
+}
+
+/* Filters (search + selects) */
+.filters{margin-bottom:18px;padding:8px 0}
+.filters .filter-row{display:flex;gap:12px;align-items:flex-end}
+.filters .search-box{flex:1}
+.filters .search-box input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(15,23,42,0.06);background:linear-gradient(180deg,#fff,#fbfdff);outline:none}
+.filters .filter-group{display:flex;flex-direction:column;gap:6px}
+.filters .filter-group label{font-size:13px;color:var(--muted);font-weight:600}
+.filters .filter-group select{min-width:160px;padding:9px 12px;border-radius:10px;border:1px solid rgba(15,23,42,0.06);background:#fff;appearance:none;cursor:pointer}
+.filters .filter-group select:focus{box-shadow:0 6px 18px rgba(37,99,235,0.08);border-color:var(--primary-600)}
+
+/* small screen: stack filters */
+@media (max-width:720px){
+	.filters .filter-row{flex-direction:column;align-items:stretch}
+	.filters .filter-group select{width:100%}
+}
+
+

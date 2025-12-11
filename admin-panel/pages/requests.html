@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заявки - Домовой</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+    <div class="dashboard">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>🏠 Домовой</h2>
+            </div>
+            
+            <ul class="sidebar-nav">
+                <li><a href="dashboard.html">📊 Главная</a></li>
+                <li><a href="users.html">👥 Пользователи</a></li>
+                <li><a href="verification.html">✅ Верификация</a></li>
+                <li><a href="requests.html" class="active">📝 Заявки</a></li>
+                <li><a href="news.html">📰 Новости</a></li>
+                <li><a href="notifications.html">🔔 Уведомления</a></li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">А</div>
+                    <div class="user-details">
+                        <div class="name" id="userName">Администратор</div>
+                        <div class="role">Администратор</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary logout-btn" onclick="logout()">Выйти</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="topbar">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1>Заявки жителей</h1>
+                <div class="topbar-actions">
+                    <button class="btn btn-primary" onclick="openNewRequestModal()">+ Новая заявка</button>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Список заявок
+                            <span class="meta"><span id="requestCount" class="count">0</span><span class="label">заявок</span></span>
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Дата</th>
+                                        <th>Житель</th>
+                                        <th>Тема</th>
+                                        <th>Статус</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="requestsTable">
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; padding: 40px;">
+                                            <div class="loader"></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- View Request Modal -->
+    <div class="modal" id="viewRequestModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Детали заявки</h2>
+                <button class="modal-close" onclick="closeModal('viewRequestModal')">&times;</button>
+            </div>
+            <div id="requestDetails"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('viewRequestModal')">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script src="../js/data.js"></script>
+    <script>
+        checkAuth();
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (currentUser) {
+            document.getElementById('userName').textContent = currentUser.fullName;
+            document.getElementById('userAvatar').textContent = currentUser.fullName.charAt(0);
+        }
+
+        function loadRequests() {
+            const reqs = getRequests().sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt));
+            const tbody = document.getElementById('requestsTable');
+            document.getElementById('requestCount').textContent = reqs.length;
+            if (reqs.length===0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Заявки не найдены</td></tr>';
+                return;
+            }
+            tbody.innerHTML = reqs.map(r=>`<tr>
+                <td>${formatDateShort(r.createdAt)}</td>
+                <td>${escapeHtml((getUserById(r.userId)||{fullName:r.userName||'Гость'}).fullName)}</td>
+                <td>${escapeHtml(r.subject)}</td>
+                <td><span class="badge ${r.status==='done'? 'badge-success' : r.status==='inprogress' ? 'badge-warning' : 'badge-info'}">${r.status? r.status : 'new'}</span></td>
+                <td><button class="btn btn-primary btn-icon" onclick="viewRequest('${r.id}')">👁️</button></td>
+            </tr>`).join('');
+        }
+
+        function viewRequest(id){
+            const r = getRequests().find(x=>x.id===id);
+            if(!r) return;
+            const user = getUserById(r.userId)||{};
+            document.getElementById('requestDetails').innerHTML = `
+                <div class="form-group"><label>Дата</label><input value="${formatDate(r.createdAt)}" readonly></div>
+                <div class="form-group"><label>Житель</label><input value="${escapeHtml(user.fullName || r.userName||'-')}" readonly></div>
+                <div class="form-group"><label>Тема</label><input value="${escapeHtml(r.subject)}" readonly></div>
+                <div class="form-group"><label>Описание</label><textarea rows="6" readonly>${escapeHtml(r.message||'-')}</textarea></div>
+                <div class="form-group"><label>Статус</label><input value="${r.status||'new'}" readonly></div>
+            `;
+            openModal('viewRequestModal');
+        }
+
+        loadRequests();
+    </script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Верификация - Домовой</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+    <div class="dashboard">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>🏠 Домовой</h2>
+            </div>
+            
+            <ul class="sidebar-nav">
+                <li><a href="dashboard.html">📊 Главная</a></li>
+                <li><a href="users.html">👥 Пользователи</a></li>
+                <li><a href="verification.html" class="active">✅ Верификация</a></li>
+                <li><a href="requests.html">📝 Заявки</a></li>
+                <li><a href="news.html">📰 Новости</a></li>
+                <li><a href="notifications.html">🔔 Уведомления</a></li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">А</div>
+                    <div class="user-details">
+                        <div class="name" id="userName">Администратор</div>
+                        <div class="role">Администратор</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary logout-btn" onclick="logout()">Выйти</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="topbar">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1>Верификация жильцов</h1>
+            </div>
+
+            <div class="content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Заявки на верификацию
+                            <span class="meta"><span id="verifyCount" class="count">0</span><span class="label">заявок</span></span>
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Дата</th>
+                                        <th>Житель</th>
+                                        <th>Email</th>
+                                        <th>Квартира</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="verifyTable">
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; padding: 40px;">
+                                            <div class="loader"></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal" id="verifyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Детали верификации</h2>
+                <button class="modal-close" onclick="closeModal('verifyModal')">&times;</button>
+            </div>
+            <div id="verifyDetails"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('verifyModal')">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script src="../js/data.js"></script>
+    <script>
+        checkAuth();
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (currentUser) {
+            document.getElementById('userName').textContent = currentUser.fullName;
+            document.getElementById('userAvatar').textContent = currentUser.fullName.charAt(0);
+        }
+
+        function loadVerifications(){
+            const users = getUsers().filter(u=> u.verification && u.verification.status === 'pending').sort((a,b)=> new Date(b.verification.submittedAt)-new Date(a.verification.submittedAt));
+            const tbody = document.getElementById('verifyTable');
+            document.getElementById('verifyCount').textContent = users.length;
+            if(users.length===0){
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Заявки не найдены</td></tr>';
+                return;
+            }
+            tbody.innerHTML = users.map(u=>`<tr>
+                <td>${formatDateShort(u.verification.submittedAt)}</td>
+                <td>${escapeHtml(u.fullName)}</td>
+                <td>${escapeHtml(u.email)}</td>
+                <td>кв. ${escapeHtml(u.verification.apartmentNumber)}</td>
+                <td><button class="btn btn-primary btn-icon" onclick="viewVerification('${u.id}')">👁️</button></td>
+            </tr>`).join('');
+        }
+
+        function viewVerification(id){
+            const u = getUserById(id);
+            if(!u) return;
+            document.getElementById('verifyDetails').innerHTML = `
+                <div class="form-group"><label>ФИО</label><input value="${escapeHtml(u.fullName)}" readonly></div>
+                <div class="form-group"><label>Email</label><input value="${escapeHtml(u.email)}" readonly></div>
+                <div class="form-group"><label>Квартира</label><input value="кв. ${escapeHtml(u.verification.apartmentNumber)}" readonly></div>
+                <div class="form-group"><label>Дата подачи</label><input value="${formatDate(u.verification.submittedAt)}" readonly></div>
+                <div class="form-group"><label>Документы</label><textarea rows="6" readonly>${escapeHtml(u.verification.documents || '-')}</textarea></div>
+                <div class="form-group"><label>Действие</label>
+                    <div style="display:flex;gap:8px">
+                        <button class="btn btn-primary" onclick="approve('${u.id}')">Подтвердить</button>
+                        <button class="btn btn-secondary" onclick="reject('${u.id}')">Отклонить</button>
+                    </div>
+                </div>
+            `;
+            openModal('verifyModal');
+        }
+
+        function approve(id){
+            const u = getUserById(id);
+            if(!u) return;
+            u.verification.status = 'approved';
+            saveUser(u);
+            showSuccess('Пользователь верифицирован');
+            closeModal('verifyModal');
+            loadVerifications();
+        }
+
+        function reject(id){
+            const u = getUserById(id);
+            if(!u) return;
+            u.verification.status = 'rejected';
+            saveUser(u);
+            showSuccess('Заявка отклонена');
+            closeModal('verifyModal');
+            loadVerifications();
+        }
+
+        loadVerifications();
+    </script>
+</body>
+</html>
