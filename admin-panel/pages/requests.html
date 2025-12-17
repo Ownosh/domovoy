@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Заявки - Домовой</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/dashboard.css">
 </head>
@@ -11,16 +12,16 @@
     <div class="dashboard">
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2>🏠 Домовой</h2>
+                <h2><i class="ri-home-5-line icon-logo"></i> Домовой</h2>
             </div>
             
             <ul class="sidebar-nav">
-                <li><a href="dashboard.html">📊 Главная</a></li>
-                <li><a href="users.html">👥 Пользователи</a></li>
-                <li><a href="verification.html">✅ Верификация</a></li>
-                <li><a href="requests.html" class="active">📝 Заявки</a></li>
-                <li><a href="news.html">📰 Новости</a></li>
-                <li><a href="notifications.html">🔔 Уведомления</a></li>
+                <li><a href="dashboard.html"><i class="ri-dashboard-line nav-icon"></i> Главная</a></li>
+                <li><a href="users.html"><i class="ri-user-3-line nav-icon"></i> Пользователи</a></li>
+                <li><a href="verification.html"><i class="ri-shield-check-line nav-icon"></i> Верификация</a></li>
+                <li><a href="requests.html" class="active"><i class="ri-file-list-3-line nav-icon"></i> Заявки</a></li>
+                <li><a href="news.html"><i class="ri-newspaper-line nav-icon"></i> Новости</a></li>
+                <li><a href="notifications.html"><i class="ri-notification-3-line nav-icon"></i> Уведомления</a></li>
             </ul>
             
             <div class="sidebar-footer">
@@ -39,9 +40,6 @@
             <div class="topbar">
                 <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
                 <h1>Заявки жителей</h1>
-                <div class="topbar-actions">
-                    <button class="btn btn-primary" onclick="openNewRequestModal()">+ Новая заявка</button>
-                </div>
             </div>
 
             <div class="content">
@@ -88,6 +86,7 @@
             <div id="requestDetails"></div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('viewRequestModal')">Закрыть</button>
+                <button class="btn btn-primary" type="button" onclick="saveRequestChanges()">Сохранить изменения</button>
             </div>
         </div>
     </div>
@@ -114,8 +113,12 @@
                 <td>${formatDateShort(r.createdAt)}</td>
                 <td>${escapeHtml((getUserById(r.userId)||{fullName:r.userName||'Гость'}).fullName)}</td>
                 <td>${escapeHtml(r.subject)}</td>
-                <td><span class="badge ${r.status==='done'? 'badge-success' : r.status==='inprogress' ? 'badge-warning' : 'badge-info'}">${r.status? r.status : 'new'}</span></td>
-                <td><button class="btn btn-primary btn-icon" onclick="viewRequest('${r.id}')">👁️</button></td>
+                <td><span class="badge ${getStatusBadgeClass(r.status)}">${getStatusText(r.status)}</span></td>
+                <td>
+                    <button class="btn btn-primary btn-icon" onclick="viewRequest('${r.id}')" title="Просмотр">
+                        <span>🔍</span>
+                    </button>
+                </td>
             </tr>`).join('');
         }
 
@@ -123,15 +126,67 @@
             const r = getRequests().find(x=>x.id===id);
             if(!r) return;
             const user = getUserById(r.userId)||{};
+            const currentStatus = r.status || 'new';
+
+            const statusOptions = `
+                <option value="new" ${currentStatus==='new' ? 'selected' : ''}>Новое</option>
+                <option value="accepted" ${currentStatus==='accepted' ? 'selected' : ''}>Принято</option>
+                <option value="inprogress" ${currentStatus==='inprogress' ? 'selected' : ''}>В работе</option>
+                <option value="done" ${currentStatus==='done' ? 'selected' : ''}>Выполнено</option>
+                <option value="rejected" ${currentStatus==='rejected' ? 'selected' : ''}>Отклонено</option>
+            `;
+
             document.getElementById('requestDetails').innerHTML = `
+                <input type="hidden" id="currentRequestId" value="${r.id}">
                 <div class="form-group"><label>Дата</label><input value="${formatDate(r.createdAt)}" readonly></div>
                 <div class="form-group"><label>Житель</label><input value="${escapeHtml(user.fullName || r.userName||'-')}" readonly></div>
                 <div class="form-group"><label>Тема</label><input value="${escapeHtml(r.subject)}" readonly></div>
                 <div class="form-group"><label>Описание</label><textarea rows="6" readonly>${escapeHtml(r.message||'-')}</textarea></div>
-                <div class="form-group"><label>Статус</label><input value="${r.status||'new'}" readonly></div>
+                <div class="form-group">
+                    <label for="requestStatusSelect">Статус</label>
+                    <select id="requestStatusSelect">
+                        ${statusOptions}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="requestComment">Комментарий администратора</label>
+                    <textarea id="requestComment" rows="4" placeholder="Добавьте комментарий по заявке...">${escapeHtml(r.adminComment || '')}</textarea>
+                </div>
             `;
             openModal('viewRequestModal');
         }
+
+        function saveRequestChanges() {
+            const idInput = document.getElementById('currentRequestId');
+            if (!idInput) {
+                closeModal('viewRequestModal');
+                return;
+            }
+            const id = idInput.value;
+            const statusEl = document.getElementById('requestStatusSelect');
+            const commentEl = document.getElementById('requestComment');
+            if (!statusEl || !commentEl) return;
+
+            const status = statusEl.value;
+            const adminComment = commentEl.value.trim();
+
+            updateRequest(id, { status, adminComment });
+            showSuccess('Изменения по заявке сохранены');
+            closeModal('viewRequestModal');
+            loadRequests();
+        }
+
+        // Поддержка открытия по ссылке ?id=...
+        (function handleDeepLink() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (id) {
+                // дождаться первоначальной отрисовки
+                setTimeout(() => {
+                    viewRequest(id);
+                }, 0);
+            }
+        })();
 
         loadRequests();
     </script>

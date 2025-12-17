@@ -4,15 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Домовой - Вход в систему</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/login.css">
 </head>
-<body>
-    <div class="login-page">
-        <div class="login-container">
-            <div class="login-header">
-                <h1>🏠 Домовой</h1>
-                <p>Панель управления</p>
+<body class="bg-slate-950 text-slate-100">
+    <div class="login-page min-h-screen flex items-center justify-center px-4">
+        <div class="login-container w-full max-w-md bg-slate-900/70 border border-slate-800/80 backdrop-blur-xl rounded-2xl shadow-2xl">
+            <div class="login-header text-center mb-4">
+                <h1 class="text-3xl font-semibold tracking-tight flex items-center justify-center gap-2">
+                    <i class="ri-home-5-line icon-logo text-primary-400"></i>
+                    Домовой
+                </h1>
+                <p class="mt-1 text-sm text-slate-400">Панель управления домом</p>
             </div>
             
             <form id="loginForm">
@@ -28,7 +32,7 @@
                 
                 <div class="error-message" id="errorMessage"></div>
                 
-                <button type="submit" class="btn btn-primary">Войти</button>
+                <button type="submit" class="btn btn-primary w-full justify-center">Войти</button>
             </form>
             
             <div class="login-footer">

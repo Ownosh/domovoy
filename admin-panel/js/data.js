@@ -33,6 +33,7 @@
     window.getUsers = function(){
         let users = read(KEYS.users);
         if (!users) {
+            const now = new Date().toISOString();
             users = [
                 {
                     id: 'admin-1',
@@ -41,7 +42,49 @@
                     password: 'admin123',
                     role: 'admin',
                     isBlocked: false,
-                    createdAt: new Date().toISOString()
+                    createdAt: now
+                },
+                {
+                    id: 'user-101',
+                    fullName: 'Иванов Иван Иванович',
+                    email: 'ivanov@example.com',
+                    password: 'demo123',
+                    role: 'resident',
+                    phone: '+7 (900) 111-22-33',
+                    isBlocked: false,
+                    createdAt: now,
+                    verification: {
+                        status: 'approved',
+                        apartmentNumber: '45',
+                        submittedAt: now,
+                        documents: 'Договор найма, квитанции об оплате коммунальных услуг.'
+                    }
+                },
+                {
+                    id: 'user-102',
+                    fullName: 'Петров Пётр Петрович',
+                    email: 'petrov@example.com',
+                    password: 'demo123',
+                    role: 'resident',
+                    phone: '+7 (900) 222-33-44',
+                    isBlocked: false,
+                    createdAt: now,
+                    verification: {
+                        status: 'pending',
+                        apartmentNumber: '12',
+                        submittedAt: now,
+                        documents: 'Заявление на верификацию, сканы паспорта.'
+                    }
+                },
+                {
+                    id: 'user-103',
+                    fullName: 'Сидорова Анна Сергеевна',
+                    email: 'sidorova@example.com',
+                    password: 'demo123',
+                    role: 'resident',
+                    phone: '+7 (900) 333-44-55',
+                    isBlocked: false,
+                    createdAt: now
                 }
             ];
             write(KEYS.users, users);
@@ -54,7 +97,33 @@
     // Notifications
     window.getNotifications = function(){
         const n = read(KEYS.notifications);
-        return Array.isArray(n) ? n : [];
+        if (Array.isArray(n)) return n;
+
+        const now = new Date().toISOString();
+        const seed = [
+            {
+                id: 'notif-1',
+                type: 'outage',
+                title: 'Плановое отключение воды',
+                message: '15 декабря с 10:00 до 14:00 будет отключена холодная вода для проведения профилактических работ. Приносим извинения за временные неудобства.',
+                targetAudience: 'all',
+                sentBy: 'admin-1',
+                senderName: 'Администратор',
+                sentAt: now
+            },
+            {
+                id: 'notif-2',
+                type: 'meeting',
+                title: 'Общее собрание жильцов',
+                message: '20 декабря в 19:00 в помещении УК состоится общее собрание жильцов. Повестка: отчёт УК и обсуждение планов на следующий год.',
+                targetAudience: 'verified',
+                sentBy: 'admin-1',
+                senderName: 'Администратор',
+                sentAt: now
+            }
+        ];
+        write(KEYS.notifications, seed);
+        return seed;
     };
 
     window.saveNotification = function(notification){
@@ -71,36 +140,120 @@
     // News
     window.getNews = function(){
         const n = read(KEYS.news);
-        return Array.isArray(n) ? n : [];
+        if (Array.isArray(n)) return n;
+
+        const now = new Date().toISOString();
+        const seed = [
+            {
+                id: 'news-1',
+                type: 'news',
+                title: 'Запуск новой системы «Домовой»',
+                content: 'Мы запустили новую систему взаимодействия с управляющей компанией. Теперь вы можете отправлять заявки, получать уведомления и новости прямо в приложении.',
+                isPublished: true,
+                authorId: 'admin-1',
+                authorName: 'Администратор',
+                createdAt: now
+            },
+            {
+                id: 'news-2',
+                type: 'announcement',
+                title: 'Уборка подъездов по новому графику',
+                content: 'С 1 января уборка подъездов будет проводиться два раза в неделю. Подробный график размещён на информационных стендах и в мобильном приложении.',
+                isPublished: true,
+                authorId: 'admin-1',
+                authorName: 'Администратор',
+                createdAt: now
+            }
+        ];
+        write(KEYS.news, seed);
+        return seed;
     };
 
-    window.saveNewsItem = function(news){
+    // Внутренние функции для работы с новостями (не светим в глобальной области,
+    // чтобы не пересекаться с функциями на странице управления новостями)
+    function saveNewsInternal(news){
         const all = getNews();
         if (news.id) {
             const idx = all.findIndex(n => n.id === news.id);
-            if (idx !== -1) { all[idx] = Object.assign({}, all[idx], news); write(KEYS.news, all); return; }
+            if (idx !== -1) {
+                all[idx] = Object.assign({}, all[idx], news);
+                write(KEYS.news, all);
+                return;
+            }
         }
-        const item = Object.assign({}, news, { id: generateId('news'), createdAt: new Date().toISOString() });
+        const item = Object.assign({}, news, {
+            id: generateId('news'),
+            createdAt: new Date().toISOString()
+        });
         all.push(item);
         write(KEYS.news, all);
-    };
+    }
 
-    window.deleteNewsItem = function(newsId){
+    function deleteNewsInternal(newsId){
         const all = getNews();
         const filtered = all.filter(n => n.id !== newsId);
         write(KEYS.news, filtered);
-    };
+    }
 
     // Requests (заявки)
     window.getRequests = function(){
         const r = read(KEYS.requests);
-        return Array.isArray(r) ? r : [];
+        if (Array.isArray(r)) return r;
+
+        const now = new Date().toISOString();
+        const seed = [
+            {
+                id: 'req-1',
+                userId: 'user-101',
+                userName: 'Иванов Иван Иванович',
+                subject: 'Протечка в подвале',
+                message: 'Обнаружена протечка трубы в подвале возле 3-го подъезда. Нужен приход слесаря.',
+                status: 'inprogress',
+                adminComment: 'Заявка передана слесарю.',
+                createdAt: now
+            },
+            {
+                id: 'req-2',
+                userId: 'user-102',
+                userName: 'Петров Пётр Петрович',
+                subject: 'Не работает освещение на лестничной клетке',
+                message: 'На площадке между 5 и 6 этажами перегорела лампочка.',
+                status: 'new',
+                adminComment: '',
+                createdAt: now
+            },
+            {
+                id: 'req-3',
+                userId: 'user-103',
+                userName: 'Сидорова Анна Сергеевна',
+                subject: 'Шум в ночное время',
+                message: 'Соседи с квартиры 37 регулярно шумят после 23:00. Просьба принять меры.',
+                status: 'done',
+                adminComment: 'Шум прекратился после беседы с жильцами.',
+                createdAt: now
+            }
+        ];
+        write(KEYS.requests, seed);
+        return seed;
     };
 
+    // В текущей демо-версии администратор не создаёт заявки вручную,
+    // они «приходят» из внешней системы. Оставляем только обновление.
     window.saveRequest = function(req){
         const all = getRequests();
-        const item = Object.assign({}, req, { id: generateId('req'), createdAt: new Date().toISOString() });
+        const item = Object.assign({}, req, {
+            id: generateId('req'),
+            createdAt: new Date().toISOString()
+        });
         all.push(item);
+        write(KEYS.requests, all);
+    };
+
+    window.updateRequest = function(id, patch){
+        const all = getRequests();
+        const idx = all.findIndex(r => r.id === id);
+        if (idx === -1) return;
+        all[idx] = Object.assign({}, all[idx], patch);
         write(KEYS.requests, all);
     };
 
@@ -130,11 +283,11 @@
     };
 
     window.saveNews = function(news){
-        return window.saveNewsItem(news);
+        return saveNewsInternal(news);
     };
 
     window.deleteNews = function(id){
-        return window.deleteNewsItem(id);
+        return deleteNewsInternal(id);
     };
 
     window.getStatistics = function(){

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Уведомления - Домовой</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/dashboard.css">
 </head>
@@ -11,16 +12,16 @@
     <div class="dashboard">
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2>🏠 Домовой</h2>
+                <h2><i class="ri-home-5-line icon-logo"></i> Домовой</h2>
             </div>
             
             <ul class="sidebar-nav">
-                <li><a href="dashboard.html">📊 Главная</a></li>
-                <li><a href="users.html">👥 Пользователи</a></li>
-                <li><a href="verification.html">✅ Верификация</a></li>
-                <li><a href="requests.html">📝 Заявки</a></li>
-                <li><a href="news.html">📰 Новости</a></li>
-                <li><a href="notifications.html" class="active">🔔 Уведомления</a></li>
+                <li><a href="dashboard.html"><i class="ri-dashboard-line nav-icon"></i> Главная</a></li>
+                <li><a href="users.html"><i class="ri-user-3-line nav-icon"></i> Пользователи</a></li>
+                <li><a href="verification.html"><i class="ri-shield-check-line nav-icon"></i> Верификация</a></li>
+                <li><a href="requests.html"><i class="ri-file-list-3-line nav-icon"></i> Заявки</a></li>
+                <li><a href="news.html"><i class="ri-newspaper-line nav-icon"></i> Новости</a></li>
+                <li><a href="notifications.html" class="active"><i class="ri-notification-3-line nav-icon"></i> Уведомления</a></li>
             </ul>
             
             <div class="sidebar-footer">
@@ -120,7 +121,7 @@
                 </div>
                 
                 <div class="alert alert-info">
-                    ℹ️ Уведомление будет отправлено всем пользователям, у которых включены уведомления данного типа.
+                    Уведомление будет отправлено всем пользователям, у которых включены уведомления данного типа.
                 </div>
                 
                 <div class="modal-footer">
@@ -177,7 +178,9 @@
                     <td>${getAudienceText(notif.targetAudience)}</td>
                     <td>${escapeHtml(notif.senderName || 'Администратор')}</td>
                     <td>
-                        <button class="btn btn-primary btn-icon" onclick="viewNotification('${notif.id}')" title="Просмотр">👁️</button>
+                        <button class="btn btn-primary btn-icon" onclick="viewNotification('${notif.id}')" title="Просмотр">
+                            <span>🔍</span>
+                        </button>
                     </td>
                 </tr>
             `).join('');
@@ -290,10 +293,6 @@
             closeModal('sendNotificationModal');
             loadNotifications();
         });
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
-        }
 
         loadNotifications();
     </script>

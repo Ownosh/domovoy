@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Домовой - Панель управления</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/dashboard.css">
 </head>
@@ -12,16 +13,16 @@
         <!-- Боковая панель -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2>🏠 Домовой</h2>
+                <h2><i class="ri-home-5-line icon-logo"></i> Домовой</h2>
             </div>
             
             <ul class="sidebar-nav">
-                <li><a href="dashboard.html" class="active">📊 Главная</a></li>
-                <li><a href="users.html">👥 Пользователи</a></li>
-                <li><a href="verification.html">✅ Верификация</a></li>
-                <li><a href="requests.html">📝 Заявки</a></li>
-                <li><a href="news.html">📰 Новости</a></li>
-                <li><a href="notifications.html">🔔 Уведомления</a></li>
+                <li><a href="dashboard.html" class="active"><i class="ri-dashboard-line nav-icon"></i> Главная</a></li>
+                <li><a href="users.html"><i class="ri-user-3-line nav-icon"></i> Пользователи</a></li>
+                <li><a href="verification.html"><i class="ri-shield-check-line nav-icon"></i> Верификация</a></li>
+                <li><a href="requests.html"><i class="ri-file-list-3-line nav-icon"></i> Заявки</a></li>
+                <li><a href="news.html"><i class="ri-newspaper-line nav-icon"></i> Новости</a></li>
+                <li><a href="notifications.html"><i class="ri-notification-3-line nav-icon"></i> Уведомления</a></li>
             </ul>
             
             <div class="sidebar-footer">
@@ -52,7 +53,7 @@
                 <!-- Статистика -->
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-icon blue">👥</div>
+                        <div class="stat-icon blue"><i class="ri-user-3-line"></i></div>
                         <div class="stat-info">
                             <h3 id="totalUsers">0</h3>
                             <p>Всего жителей</p>
@@ -60,7 +61,7 @@
                     </div>
                     
                     <div class="stat-card">
-                        <div class="stat-icon green">✅</div>
+                        <div class="stat-icon green"><i class="ri-shield-check-line"></i></div>
                         <div class="stat-info">
                             <h3 id="verifiedUsers">0</h3>
                             <p>Верифицировано</p>
@@ -68,7 +69,7 @@
                     </div>
                     
                     <div class="stat-card">
-                        <div class="stat-icon orange">📝</div>
+                        <div class="stat-icon orange"><i class="ri-file-list-3-line"></i></div>
                         <div class="stat-info">
                             <h3 id="newRequests">0</h3>
                             <p>Новых заявок</p>
@@ -76,7 +77,7 @@
                     </div>
                     
                     <div class="stat-card">
-                        <div class="stat-icon purple">🔔</div>
+                        <div class="stat-icon purple"><i class="ri-time-line"></i></div>
                         <div class="stat-info">
                             <h3 id="pendingVerifications">0</h3>
                             <p>Ожидают верификацию</p>
@@ -209,7 +210,9 @@
                     <td>${escapeHtml(req.subject)}</td>
                     <td><span class="badge ${getStatusBadgeClass(req.status)}">${getStatusText(req.status)}</span></td>
                     <td>
-                        <a href="requests.html?id=${req.id}" class="btn btn-primary btn-icon">👁️</a>
+                        <a href="requests.html?id=${req.id}" class="btn btn-primary btn-icon" title="Открыть заявку">
+                            <span>🔍</span>
+                        </a>
                     </td>
                 </tr>
             `).join('');
@@ -239,15 +242,12 @@
                     <td>${escapeHtml(user.email)}</td>
                     <td>кв. ${escapeHtml(user.verification.apartmentNumber)}</td>
                     <td>
-                        <a href="verification.html?id=${user.id}" class="btn btn-primary btn-icon">👁️</a>
+                        <a href="verification.html?id=${user.id}" class="btn btn-primary btn-icon" title="Открыть верификацию">
+                            <span>🔍</span>
+                        </a>
                     </td>
                 </tr>
             `).join('');
-        }
-
-        // Переключение боковой панели на мобильных
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
         }
 
         // Инициализация

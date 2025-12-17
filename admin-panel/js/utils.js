@@ -30,6 +30,47 @@
         return pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear();
     };
 
+    // Статусы заявок/верификаций → css-класс бэйджа
+    window.getStatusBadgeClass = function(status) {
+        if (!status || status === 'none') return 'badge-secondary';
+        switch (status) {
+            case 'new':
+                return 'badge-info';
+            case 'accepted':
+                return 'badge-info';
+            case 'inprogress':
+            case 'pending':
+                return 'badge-warning';
+            case 'done':
+            case 'approved':
+                return 'badge-success';
+            case 'rejected':
+                return 'badge-danger';
+            default:
+                return 'badge-secondary';
+        }
+    };
+
+    // Человекочитаемый текст статуса заявки
+    window.getStatusText = function(status) {
+        switch (status) {
+            case 'new':
+            case undefined:
+            case null:
+                return 'Новая';
+            case 'accepted':
+                return 'Принята';
+            case 'inprogress':
+                return 'В работе';
+            case 'done':
+                return 'Выполнена';
+            case 'rejected':
+                return 'Отклонена';
+            default:
+                return status;
+        }
+    };
+
     window.openModal = function(id) {
         const modal = document.getElementById(id);
         if (!modal) return;
@@ -68,8 +109,15 @@
             const c = ensureContainer();
             const t = document.createElement('div');
             t.className = 'toast toast-' + (type || 'info');
+
+            const iconClass = type === 'success'
+                ? 'ri-checkbox-circle-line'
+                : type === 'error'
+                    ? 'ri-error-warning-line'
+                    : 'ri-information-line';
+
             t.innerHTML = `
-                <div class="toast-icon">${type==='success' ? '✅' : type==='error' ? '⚠️' : 'ℹ️'}</div>
+                <div class="toast-icon"><i class="${iconClass}"></i></div>
                 <div class="toast-body">${escapeHtml(message)}</div>
                 <button class="toast-close" aria-label="close">✕</button>
             `;
@@ -107,5 +155,44 @@
         localStorage.removeItem('currentUser');
         window.location.href = '../index.html';
     };
+
+    // Общий переключатель бокового меню (используется на всех страницах)
+    window.toggleSidebar = function(){
+        const sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
+        sidebar.classList.toggle('active');
+    };
+
+    // Dropdown меню
+    window.initDropdowns = function(){
+        document.addEventListener('click', function(e){
+            const dropdown = e.target.closest('.dropdown');
+            const allDropdowns = document.querySelectorAll('.dropdown');
+            
+            allDropdowns.forEach(d => {
+                if (d !== dropdown) {
+                    d.classList.remove('active');
+                }
+            });
+            
+            if (dropdown) {
+                const toggle = dropdown.querySelector('.dropdown-toggle');
+                if (e.target === toggle || toggle.contains(e.target)) {
+                    dropdown.classList.toggle('active');
+                } else if (!dropdown.querySelector('.dropdown-menu').contains(e.target)) {
+                    dropdown.classList.remove('active');
+                }
+            } else {
+                allDropdowns.forEach(d => d.classList.remove('active'));
+            }
+        });
+    };
+
+    // Инициализация dropdown при загрузке
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDropdowns);
+    } else {
+        initDropdowns();
+    }
 
 })();

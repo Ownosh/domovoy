@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Пользователи - Домовой</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/dashboard.css">
 </head>
@@ -11,16 +12,16 @@
     <div class="dashboard">
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2>🏠 Домовой</h2>
+                <h2><i class="ri-home-5-line icon-logo"></i> Домовой</h2>
             </div>
             
             <ul class="sidebar-nav">
-                <li><a href="dashboard.html">📊 Главная</a></li>
-                <li><a href="users.html" class="active">👥 Пользователи</a></li>
-                <li><a href="verification.html">✅ Верификация</a></li>
-                <li><a href="requests.html">📝 Заявки</a></li>
-                <li><a href="news.html">📰 Новости</a></li>
-                <li><a href="notifications.html">🔔 Уведомления</a></li>
+                <li><a href="dashboard.html"><i class="ri-dashboard-line nav-icon"></i> Главная</a></li>
+                <li><a href="users.html" class="active"><i class="ri-user-3-line nav-icon"></i> Пользователи</a></li>
+                <li><a href="verification.html"><i class="ri-shield-check-line nav-icon"></i> Верификация</a></li>
+                <li><a href="requests.html"><i class="ri-file-list-3-line nav-icon"></i> Заявки</a></li>
+                <li><a href="news.html"><i class="ri-newspaper-line nav-icon"></i> Новости</a></li>
+                <li><a href="notifications.html"><i class="ri-notification-3-line nav-icon"></i> Уведомления</a></li>
             </ul>
             
             <div class="sidebar-footer">
@@ -135,8 +136,20 @@
         let allUsers = [];
 
         function loadUsers() {
-            allUsers = getUsers().filter(u => u.role === 'resident');
-            displayUsers(allUsers);
+            try {
+                const users = getUsers();
+                if (!users || !Array.isArray(users)) {
+                    console.error('getUsers() не вернул массив');
+                    allUsers = [];
+                } else {
+                    allUsers = users.filter(u => u.role === 'resident');
+                }
+                displayUsers(allUsers);
+            } catch (error) {
+                console.error('Ошибка при загрузке пользователей:', error);
+                allUsers = [];
+                displayUsers([]);
+            }
         }
 
         function displayUsers(users) {
@@ -162,9 +175,11 @@
                         <td><span class="badge ${user.isBlocked ? 'badge-danger' : 'badge-success'}">${user.isBlocked ? 'Заблокирован' : 'Активен'}</span></td>
                         <td>
                             <div class="action-buttons">
-                                <button class="btn btn-primary btn-icon" onclick="viewUser('${user.id}')" title="Просмотр">👁️</button>
+                                <button class="btn btn-primary btn-icon" onclick="viewUser('${user.id}')" title="Просмотр">
+                                    <span>🔍</span>
+                                </button>
                                 <button class="btn ${user.isBlocked ? 'btn-success' : 'btn-warning'} btn-icon" onclick="toggleUserBlock('${user.id}')" title="${user.isBlocked ? 'Разблокировать' : 'Заблокировать'}">
-                                    ${user.isBlocked ? '🔓' : '🔒'}
+                                    <span>${user.isBlocked ? '🔓' : '🔒'}</span>
                                 </button>
                             </div>
                         </td>
@@ -246,12 +261,27 @@
                     </div>
                     <div class="form-group">
                         <label>Статус верификации</label>
-                        <input type="text" value="${getVerificationText(user.verification.status)}" readonly>
+                        <select disabled style="opacity:0.6">
+                            <option value="none" ${!user.verification || user.verification.status === 'none' ? 'selected' : ''}>Нет заявки</option>
+                            <option value="pending" ${user.verification.status === 'pending' ? 'selected' : ''}>Ожидает</option>
+                            <option value="approved" ${user.verification.status === 'approved' ? 'selected' : ''}>Верифицирован</option>
+                            <option value="rejected" ${user.verification.status === 'rejected' ? 'selected' : ''}>Отклонён</option>
+                        </select>
                     </div>
-                ` : ''}
+                ` : `
+                    <div class="form-group">
+                        <label>Статус верификации</label>
+                        <select disabled style="opacity:0.6">
+                            <option value="none" selected>Нет заявки</option>
+                        </select>
+                    </div>
+                `}
                 <div class="form-group">
                     <label>Статус аккаунта</label>
-                    <input type="text" value="${user.isBlocked ? 'Заблокирован' : 'Активен'}" readonly>
+                    <select disabled style="opacity:0.6">
+                        <option value="active" ${!user.isBlocked ? 'selected' : ''}>Активен</option>
+                        <option value="blocked" ${user.isBlocked ? 'selected' : ''}>Заблокирован</option>
+                    </select>
                 </div>
             `;
 
@@ -270,10 +300,6 @@
                 showSuccess(`Пользователь ${user.isBlocked ? 'заблокирован' : 'разблокирован'}`);
                 loadUsers();
             }
-        }
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
         }
 
         loadUsers();

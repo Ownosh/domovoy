@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Новости - Домовой</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/dashboard.css">
 </head>
@@ -11,16 +12,16 @@
     <div class="dashboard">
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2>🏠 Домовой</h2>
+                <h2><i class="ri-home-5-line icon-logo"></i> Домовой</h2>
             </div>
             
             <ul class="sidebar-nav">
-                <li><a href="dashboard.html">📊 Главная</a></li>
-                <li><a href="users.html">👥 Пользователи</a></li>
-                <li><a href="verification.html">✅ Верификация</a></li>
-                <li><a href="requests.html">📝 Заявки</a></li>
-                <li><a href="news.html" class="active">📰 Новости</a></li>
-                <li><a href="notifications.html">🔔 Уведомления</a></li>
+                <li><a href="dashboard.html"><i class="ri-dashboard-line nav-icon"></i> Главная</a></li>
+                <li><a href="users.html"><i class="ri-user-3-line nav-icon"></i> Пользователи</a></li>
+                <li><a href="verification.html"><i class="ri-shield-check-line nav-icon"></i> Верификация</a></li>
+                <li><a href="requests.html"><i class="ri-file-list-3-line nav-icon"></i> Заявки</a></li>
+                <li><a href="news.html" class="active"><i class="ri-newspaper-line nav-icon"></i> Новости</a></li>
+                <li><a href="notifications.html"><i class="ri-notification-3-line nav-icon"></i> Уведомления</a></li>
             </ul>
             
             <div class="sidebar-footer">
@@ -131,15 +132,28 @@
                 </div>
                 
                 <div class="form-group">
+                    <label for="newsCategory">Категория</label>
+                    <select id="newsCategory">
+                        <option value="">Общая</option>
+                        <option value="maintenance">Техническое обслуживание</option>
+                        <option value="meeting">Собрания</option>
+                        <option value="payment">Платежи</option>
+                        <option value="rules">Правила и нормы</option>
+                        <option value="events">События</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
                     <label for="newsContent">Содержание *</label>
                     <textarea id="newsContent" rows="8" required></textarea>
                 </div>
                 
                 <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="newsPublished" checked>
-                        Опубликовать сразу
-                    </label>
+                    <label for="newsPublished">Статус публикации *</label>
+                    <select id="newsPublished" required>
+                        <option value="true">Опубликовано</option>
+                        <option value="false">Черновик</option>
+                    </select>
                 </div>
                 
                 <div class="modal-footer">
@@ -200,9 +214,15 @@
                     <td><span class="badge ${item.isPublished ? 'badge-success' : 'badge-secondary'}">${item.isPublished ? 'Опубликовано' : 'Черновик'}</span></td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn btn-primary btn-icon" onclick="viewNews('${item.id}')" title="Просмотр">👁️</button>
-                            <button class="btn btn-warning btn-icon" onclick="editNews('${item.id}')" title="Редактировать">✏️</button>
-                            <button class="btn btn-danger btn-icon" onclick="deleteNewsItem('${item.id}')" title="Удалить">🗑️</button>
+                            <button class="btn btn-primary btn-icon" onclick="viewNews('${item.id}')" title="Просмотр">
+                                <span>🔍</span>
+                            </button>
+                            <button class="btn btn-warning btn-icon" onclick="editNews('${item.id}')" title="Редактировать">
+                                <span>✏️</span>
+                            </button>
+                            <button class="btn btn-danger btn-icon" onclick="deleteNewsItem('${item.id}')" title="Удалить">
+                                <span>🗑️</span>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -239,7 +259,8 @@
             document.getElementById('modalTitle').textContent = 'Добавить новость';
             document.getElementById('newsForm').reset();
             document.getElementById('newsId').value = '';
-            document.getElementById('newsPublished').checked = true;
+            document.getElementById('newsPublished').value = 'true';
+            document.getElementById('newsCategory').value = '';
             openModal('newsModal');
         }
 
@@ -277,8 +298,9 @@
             document.getElementById('newsId').value = news.id;
             document.getElementById('newsTitle').value = news.title;
             document.getElementById('newsType').value = news.type;
+            document.getElementById('newsCategory').value = news.category || '';
             document.getElementById('newsContent').value = news.content;
-            document.getElementById('newsPublished').checked = news.isPublished;
+            document.getElementById('newsPublished').value = news.isPublished ? 'true' : 'false';
             openModal('newsModal');
         }
 
@@ -301,8 +323,9 @@
                 id: newsId || undefined,
                 title: document.getElementById('newsTitle').value.trim(),
                 type: document.getElementById('newsType').value,
+                category: document.getElementById('newsCategory').value || undefined,
                 content: document.getElementById('newsContent').value.trim(),
-                isPublished: document.getElementById('newsPublished').checked,
+                isPublished: document.getElementById('newsPublished').value === 'true',
                 authorId: currentUser.id,
                 authorName: currentUser.fullName
             };
@@ -317,10 +340,6 @@
             closeModal('newsModal');
             loadNews();
         });
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
-        }
 
         loadNews();
     </script>
