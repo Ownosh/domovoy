@@ -41,8 +41,10 @@ body{
 .btn-warning:hover{background:#d97706}
 .btn-danger{background:#dc2626;color:#fff;box-shadow:0 2px 8px rgba(220,38,38,0.2)}
 .btn-danger:hover{background:#b91c1c}
-.btn-icon{padding:8px 10px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center}
-.btn-icon span{font-size:16px;line-height:1}
+.btn-icon{padding:10px 12px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:40px;transition:all 0.2s ease}
+.btn-icon span{font-size:18px;line-height:1;display:block}
+.btn-icon:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.btn-icon:active{transform:translateY(0)}
 
 .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;transition:box-shadow 0.2s ease}
 .card:hover{box-shadow:0 8px 24px rgba(16,24,40,0.12)}
@@ -109,7 +111,16 @@ thead th{background:rgba(15,23,42,0.02);text-align:left;padding:12px 10px;color:
 tbody tr{transition:background 0.2s ease}
 tbody tr:hover{background:rgba(37,99,235,0.02)}
 tbody td{padding:12px 10px;border-bottom:1px solid rgba(15,23,42,0.04)}
-.action-buttons{display:flex;gap:8px;align-items:center}
+.action-buttons{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.action-buttons .btn-icon{box-shadow:0 2px 6px rgba(0,0,0,0.1)}
+.action-buttons .btn-primary.btn-icon{background:var(--primary);color:#fff}
+.action-buttons .btn-primary.btn-icon:hover{background:var(--primary-600);box-shadow:0 4px 12px rgba(37,99,235,0.3)}
+.action-buttons .btn-warning.btn-icon{background:#f59e0b;color:#fff}
+.action-buttons .btn-warning.btn-icon:hover{background:#d97706;box-shadow:0 4px 12px rgba(245,158,11,0.3)}
+.action-buttons .btn-danger.btn-icon{background:#dc2626;color:#fff}
+.action-buttons .btn-danger.btn-icon:hover{background:#b91c1c;box-shadow:0 4px 12px rgba(220,38,38,0.3)}
+.action-buttons .btn-success.btn-icon{background:var(--success);color:#fff}
+.action-buttons .btn-success.btn-icon:hover{background:#15803d;box-shadow:0 4px 12px rgba(22,163,74,0.3)}
 
 /* Dropdown menu */
 .dropdown{position:relative;display:inline-block}
