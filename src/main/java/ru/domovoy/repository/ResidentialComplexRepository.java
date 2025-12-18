@@ -8,3 +8,5 @@ import ru.domovoy.model.ResidentialComplex;
 public interface ResidentialComplexRepository extends JpaRepository<ResidentialComplex, Long> {
 }
 
+
+

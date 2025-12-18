@@ -13,3 +13,5 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
     List<UserNotification> findByNotificationNotificationId(Long notificationId);
 }
 
+
+

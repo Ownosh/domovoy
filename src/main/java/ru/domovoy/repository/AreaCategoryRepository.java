@@ -8,3 +8,5 @@ import ru.domovoy.model.AreaCategory;
 public interface AreaCategoryRepository extends JpaRepository<AreaCategory, Long> {
 }
 
+
+

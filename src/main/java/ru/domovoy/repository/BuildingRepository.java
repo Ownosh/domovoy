@@ -11,3 +11,5 @@ public interface BuildingRepository extends JpaRepository<Building, Long> {
     List<Building> findByComplexComplexId(Long complexId);
 }
 
+
+

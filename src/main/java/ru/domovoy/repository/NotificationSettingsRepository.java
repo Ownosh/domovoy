@@ -11,3 +11,5 @@ public interface NotificationSettingsRepository extends JpaRepository<Notificati
     Optional<NotificationSettings> findByUserUserId(Long userId);
 }
 
+
+

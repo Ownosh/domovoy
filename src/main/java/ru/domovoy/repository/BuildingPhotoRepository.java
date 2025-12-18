@@ -11,3 +11,5 @@ public interface BuildingPhotoRepository extends JpaRepository<BuildingPhoto, Lo
     List<BuildingPhoto> findByBuildingBuildingId(Long buildingId);
 }
 
+
+

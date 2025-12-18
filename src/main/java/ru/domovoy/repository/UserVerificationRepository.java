@@ -13,3 +13,5 @@ public interface UserVerificationRepository extends JpaRepository<UserVerificati
     List<UserVerification> findByBuildingBuildingId(Long buildingId);
 }
 
+
+

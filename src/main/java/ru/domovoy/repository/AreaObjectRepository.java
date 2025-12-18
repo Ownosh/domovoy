@@ -11,3 +11,5 @@ public interface AreaObjectRepository extends JpaRepository<AreaObject, Long> {
     List<AreaObject> findByCategoryCategoryId(Long categoryId);
 }
 
+
+

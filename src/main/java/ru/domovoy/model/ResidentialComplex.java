@@ -48,3 +48,5 @@ public class ResidentialComplex {
     private ManagementContacts managementContacts;
 }
 
+
+
