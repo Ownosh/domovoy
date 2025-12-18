@@ -1,4 +1,19 @@
 {
     "java.compile.nullAnalysis.mode": "automatic",
-    "java.configuration.updateBuildConfiguration": "automatic"
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.import.maven.enabled": true,
+    "java.import.gradle.enabled": false,
+    "java.import.generatesMetadataFilesAtProjectRoot": false,
+    "java.configuration.maven.notCoveredPluginExecutionSeverity": "ignore",
+    "java.project.resourceFilters": [
+        "node_modules",
+        ".git"
+    ],
+    "java.clean.workspace": false,
+    "files.exclude": {
+        "**/.classpath": true,
+        "**/.project": true,
+        "**/.settings": true,
+        "**/.factorypath": true
+    }
 }
