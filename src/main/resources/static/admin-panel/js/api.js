@@ -254,13 +254,32 @@
     }
     
     function mapVerificationToApi(verification) {
-        return {
-            apartmentNumber: verification.apartmentNumber,
-            documentType: verification.documentType,
-            documentUrl: verification.documentUrl || null,
-            status: verification.status,
-            rejectionReason: verification.rejectionReason || null,
-        };
+        const result = {};
+        
+        // Включаем только те поля, которые явно переданы (не undefined)
+        if (verification.apartmentNumber !== undefined) {
+            result.apartmentNumber = verification.apartmentNumber;
+        }
+        if (verification.documentType !== undefined) {
+            result.documentType = verification.documentType;
+        }
+        if (verification.documentUrl !== undefined) {
+            result.documentUrl = verification.documentUrl || null;
+        }
+        if (verification.status !== undefined) {
+            result.status = verification.status;
+        }
+        if (verification.rejectionReason !== undefined) {
+            result.rejectionReason = verification.rejectionReason || null;
+        }
+        if (verification.reviewedBy !== undefined) {
+            result.reviewedBy = verification.reviewedBy ? { userId: verification.reviewedBy } : null;
+        }
+        if (verification.reviewedAt !== undefined) {
+            result.reviewedAt = verification.reviewedAt || null;
+        }
+        
+        return result;
     }
     
     // API методы для пользователей

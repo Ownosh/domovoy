@@ -208,7 +208,12 @@
 
         async function approve(id){
             try {
-                await updateVerification(id, { status: 'approved' });
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                await updateVerification(id, { 
+                    status: 'approved',
+                    reviewedBy: currentUser?.userId || currentUser?.id,
+                    reviewedAt: new Date().toISOString()
+                });
                 showSuccess('Пользователь верифицирован');
                 closeModal('verifyModal');
                 await loadVerifications();
@@ -219,9 +224,12 @@
 
         async function reject(id, comment){
             try {
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                 await updateVerification(id, { 
                     status: 'rejected',
-                    rejectionReason: comment
+                    rejectionReason: comment,
+                    reviewedBy: currentUser?.userId || currentUser?.id,
+                    reviewedAt: new Date().toISOString()
                 });
                 showSuccess('Заявка отклонена');
                 closeModal('verifyModal');

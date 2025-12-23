@@ -5,10 +5,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
+import ru.domovoy.model.User;
 import ru.domovoy.model.UserVerification;
+import ru.domovoy.repository.UserRepository;
 import ru.domovoy.repository.UserVerificationRepository;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -16,10 +21,12 @@ import java.util.Optional;
 @CrossOrigin(origins = "*")
 public class UserVerificationController {
     private final UserVerificationRepository verificationRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    public UserVerificationController(UserVerificationRepository verificationRepository) {
+    public UserVerificationController(UserVerificationRepository verificationRepository, UserRepository userRepository) {
         this.verificationRepository = verificationRepository;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
@@ -47,7 +54,7 @@ public class UserVerificationController {
 
     @GetMapping("/{id}")
     public ResponseEntity<UserVerification> getVerificationById(@PathVariable @NonNull Long id) {
-        Optional<UserVerification> verification = verificationRepository.findById(id);
+        Optional<UserVerification> verification = verificationRepository.findByIdWithUserAndBuilding(id);
         return verification.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -59,18 +66,68 @@ public class UserVerificationController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserVerification> updateVerification(@PathVariable @NonNull Long id, @RequestBody @NonNull UserVerification verification) {
-        return verificationRepository.findById(id)
+    public ResponseEntity<UserVerification> updateVerification(@PathVariable @NonNull Long id, @RequestBody @NonNull Map<String, Object> updates) {
+        return verificationRepository.findByIdWithUserAndBuilding(id)
                 .map(existingVerification -> {
-                    existingVerification.setApartmentNumber(verification.getApartmentNumber());
-                    existingVerification.setDocumentType(verification.getDocumentType());
-                    existingVerification.setDocumentUrl(verification.getDocumentUrl());
-                    existingVerification.setStatus(verification.getStatus());
-                    existingVerification.setRejectionReason(verification.getRejectionReason());
-                    existingVerification.setReviewedBy(verification.getReviewedBy());
+                    // Обновляем только переданные поля
+                    if (updates.containsKey("apartmentNumber")) {
+                        existingVerification.setApartmentNumber((String) updates.get("apartmentNumber"));
+                    }
+                    if (updates.containsKey("documentType")) {
+                        String documentTypeStr = (String) updates.get("documentType");
+                        if (documentTypeStr != null) {
+                            existingVerification.setDocumentType(UserVerification.DocumentType.valueOf(documentTypeStr));
+                        }
+                    }
+                    if (updates.containsKey("documentUrl")) {
+                        existingVerification.setDocumentUrl((String) updates.get("documentUrl"));
+                    }
+                    if (updates.containsKey("status")) {
+                        String statusStr = (String) updates.get("status");
+                        if (statusStr != null) {
+                            existingVerification.setStatus(UserVerification.VerificationStatus.valueOf(statusStr));
+                        }
+                    }
+                    if (updates.containsKey("rejectionReason")) {
+                        existingVerification.setRejectionReason((String) updates.get("rejectionReason"));
+                    }
+                    
+                    // Обновляем reviewedBy если передан
+                    if (updates.containsKey("reviewedBy")) {
+                        Object reviewedByObj = updates.get("reviewedBy");
+                        if (reviewedByObj != null) {
+                            Long reviewerId = extractUserId(reviewedByObj);
+                            if (reviewerId != null) {
+                                final Long finalReviewerId = reviewerId;
+                                User reviewer = userRepository.findById(finalReviewerId)
+                                        .orElseThrow(() -> new RuntimeException("User not found with id: " + finalReviewerId));
+                                existingVerification.setReviewedBy(reviewer);
+                            }
+                        }
+                    }
 
-                    if (verification.getReviewedAt() != null) {
-                        existingVerification.setReviewedAt(verification.getReviewedAt());
+                    // Устанавливаем reviewedAt если передан или если статус меняется на approved/rejected
+                    if (updates.containsKey("reviewedAt")) {
+                        Object reviewedAtObj = updates.get("reviewedAt");
+                        if (reviewedAtObj != null) {
+                            if (reviewedAtObj instanceof String) {
+                                try {
+                                    String dateStr = (String) reviewedAtObj;
+                                    // Парсим ISO 8601 формат
+                                    OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateStr);
+                                    existingVerification.setReviewedAt(offsetDateTime.toLocalDateTime());
+                                } catch (Exception e) {
+                                    // Если не удалось распарсить, используем текущее время
+                                    existingVerification.setReviewedAt(LocalDateTime.now());
+                                }
+                            }
+                        }
+                    } else if (updates.containsKey("status")) {
+                        String statusStr = (String) updates.get("status");
+                        if (statusStr != null && 
+                            (statusStr.equals("approved") || statusStr.equals("rejected"))) {
+                            existingVerification.setReviewedAt(LocalDateTime.now());
+                        }
                     }
 
                     UserVerification updatedVerification = verificationRepository.save(existingVerification);
@@ -86,6 +143,24 @@ public class UserVerificationController {
         }
         verificationRepository.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+    
+    private Long extractUserId(Object reviewedByObj) {
+        if (reviewedByObj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> reviewedByMap = (Map<String, Object>) reviewedByObj;
+            Object userIdObj = reviewedByMap.get("userId");
+            if (userIdObj instanceof Number) {
+                return ((Number) userIdObj).longValue();
+            } else if (userIdObj instanceof String) {
+                return Long.parseLong((String) userIdObj);
+            }
+        } else if (reviewedByObj instanceof Number) {
+            return ((Number) reviewedByObj).longValue();
+        } else if (reviewedByObj instanceof String) {
+            return Long.parseLong((String) reviewedByObj);
+        }
+        return null;
     }
 }
 

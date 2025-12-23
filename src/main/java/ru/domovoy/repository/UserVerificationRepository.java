@@ -16,6 +16,10 @@ public interface UserVerificationRepository extends JpaRepository<UserVerificati
     // Загружаем пользователя и здание вместе с верификациями
     @Query("SELECT v FROM UserVerification v JOIN FETCH v.user LEFT JOIN FETCH v.building")
     List<UserVerification> findAllWithUserAndBuilding();
+    
+    // Загружаем пользователя и здание для одной верификации
+    @Query("SELECT v FROM UserVerification v JOIN FETCH v.user LEFT JOIN FETCH v.building WHERE v.verificationId = :id")
+    java.util.Optional<UserVerification> findByIdWithUserAndBuilding(Long id);
 }
 
 
