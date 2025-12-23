@@ -85,10 +85,10 @@
                     </div>
                 </div>
 
-                <!-- Последние заявки -->
+                <!-- Новые заявки -->
                 <div class="card">
                     <div class="card-header">
-                        <h3>Последние заявки
+                        <h3>Новые заявки
                             <span class="meta"><span id="recentRequestsCount" class="count">0</span><span class="label">заявок</span></span>
                         </h3>
                         <a href="requests.html" class="btn btn-primary">Все заявки</a>
@@ -193,11 +193,16 @@
             }
         }
 
-        // Загрузка последних заявок
+        // Загрузка новых заявок
         async function loadRecentRequests() {
             try {
                 const requests = await getRequests();
-                const sorted = requests.sort((a, b) => 
+                // Фильтруем только новые заявки
+                const newRequests = requests.filter(r => {
+                    const status = (r.status || 'new').replace(/_/g, '');
+                    return status === 'new';
+                });
+                const sorted = newRequests.sort((a, b) => 
                     new Date(b.createdAt) - new Date(a.createdAt)
                 ).slice(0, 5);
 

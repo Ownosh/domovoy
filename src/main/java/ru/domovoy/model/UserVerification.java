@@ -29,8 +29,8 @@ public class UserVerification {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "building_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JoinColumn(name = "building_id", nullable = true)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "complex", "buildingPhotos", "userVerifications"})
     private Building building;
 
     @Column(name = "apartment_number", length = 20)

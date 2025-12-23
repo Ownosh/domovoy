@@ -1,5 +1,7 @@
 package ru.domovoy.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,6 +18,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Building {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,6 +27,7 @@ public class Building {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "complex_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private ResidentialComplex complex;
 
     @Column(name = "building_number", length = 50)
@@ -50,11 +54,14 @@ public class Building {
 
     // Relationships
     @OneToMany(mappedBy = "building", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<BuildingPhoto> buildingPhotos;
 
     @OneToMany(mappedBy = "building", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<UserVerification> userVerifications;
 }
+
 
 
 

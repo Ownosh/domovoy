@@ -24,7 +24,7 @@ public class UserVerificationController {
 
     @GetMapping
     public ResponseEntity<List<UserVerification>> getAllVerifications() {
-        List<UserVerification> verifications = verificationRepository.findAll();
+        List<UserVerification> verifications = verificationRepository.findAllWithUserAndBuilding();
         return ResponseEntity.ok(verifications);
     }
 
@@ -88,6 +88,7 @@ public class UserVerificationController {
         return ResponseEntity.noContent().build();
     }
 }
+
 
 
 

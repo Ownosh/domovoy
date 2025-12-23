@@ -50,6 +50,28 @@
                         </h3>
                     </div>
                     <div class="card-body">
+                        <!-- Фильтры -->
+                        <div class="filters">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label>Статус</label>
+                                    <select id="statusFilter">
+                                        <option value="">Все статусы</option>
+                                        <option value="new">Новая</option>
+                                        <option value="accepted">Принята</option>
+                                        <option value="inprogress">В работе</option>
+                                        <option value="resolved">Выполнена</option>
+                                        <option value="rejected">Отклонена</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Поиск</label>
+                                    <div class="search-box">
+                                        <input type="text" id="searchFilter" placeholder="Поиск по теме или жителю...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="table-container">
                             <table>
                                 <thead>
@@ -80,12 +102,26 @@
     <div class="modal" id="viewRequestModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Детали заявки</h2>
+                <h2>Просмотр заявки</h2>
                 <button class="modal-close" onclick="closeModal('viewRequestModal')">&times;</button>
             </div>
             <div id="requestDetails"></div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('viewRequestModal')">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Request Modal -->
+    <div class="modal" id="editRequestModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Редактирование заявки</h2>
+                <button class="modal-close" onclick="closeModal('editRequestModal')">&times;</button>
+            </div>
+            <div id="editRequestDetails"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('editRequestModal')">Отмена</button>
                 <button class="btn btn-primary" type="button" onclick="saveRequestChanges()">Сохранить изменения</button>
             </div>
         </div>
@@ -141,8 +177,35 @@
                     return;
                 }
                 
+                // Применяем фильтры
+                const statusFilter = document.getElementById('statusFilter')?.value || '';
+                const searchFilter = document.getElementById('searchFilter')?.value.toLowerCase() || '';
+                
+                let filteredReqs = reqs;
+                if (statusFilter) {
+                    filteredReqs = filteredReqs.filter(r => {
+                        const normalizedStatus = (r.status || 'new').replace(/_/g, '');
+                        return normalizedStatus === statusFilter;
+                    });
+                }
+                if (searchFilter) {
+                    filteredReqs = filteredReqs.filter(r => {
+                        const subject = (r.subject || '').toLowerCase();
+                        const userName = (r.userName || '').toLowerCase();
+                        return subject.includes(searchFilter) || userName.includes(searchFilter);
+                    });
+                }
+                
+                document.getElementById('requestCount').textContent = filteredReqs.length;
+                
+                if (filteredReqs.length===0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Заявки не найдены</td></tr>';
+                    isLoadingRequests = false;
+                    return;
+                }
+                
                 // Используем userName из маппинга, не делаем лишние запросы
-                tbody.innerHTML = reqs.map(r => {
+                tbody.innerHTML = filteredReqs.map(r => {
                     // Проверяем наличие обязательных полей
                     const id = r.id || r.requestId || '';
                     const createdAt = r.createdAt || '';
@@ -157,9 +220,14 @@
                         <td>${escapeHtml(subject)}</td>
                         <td><span class="badge ${getStatusBadgeClass(status)}">${getStatusText(status)}</span></td>
                         <td>
-                            <button class="btn btn-primary btn-icon" onclick="viewRequest('${id}')" title="Просмотр">
-                                <span>🔍</span>
-                            </button>
+                            <div class="action-buttons">
+                                <button class="btn btn-primary btn-icon" onclick="viewRequest('${id}')" title="Просмотр">
+                                    <span>🔍</span>
+                                </button>
+                                <button class="btn btn-warning btn-icon" onclick="editRequest('${id}')" title="Редактировать">
+                                    <span>✏️</span>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -200,21 +268,12 @@
             `;
 
             document.getElementById('requestDetails').innerHTML = `
-                <input type="hidden" id="currentRequestId" value="${r.id}">
                 <div class="form-group"><label>Дата</label><input value="${formatDate(r.createdAt)}" readonly></div>
                 <div class="form-group"><label>Житель</label><input value="${escapeHtml(user.fullName || r.userName||'-')}" readonly></div>
                 <div class="form-group"><label>Тема</label><input value="${escapeHtml(r.subject)}" readonly></div>
                 <div class="form-group"><label>Описание</label><textarea rows="6" readonly>${escapeHtml(r.message||'-')}</textarea></div>
-                <div class="form-group">
-                    <label for="requestStatusSelect">Статус</label>
-                    <select id="requestStatusSelect">
-                        ${statusOptions}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="requestComment">Комментарий администратора</label>
-                    <textarea id="requestComment" rows="4" placeholder="Добавьте комментарий по заявке...">${escapeHtml(r.adminComment || '')}</textarea>
-                </div>
+                <div class="form-group"><label>Статус</label><input value="${getStatusText(currentStatus)}" readonly></div>
+                <div class="form-group"><label>Комментарий администратора</label><textarea rows="4" readonly>${escapeHtml(r.adminComment || '-')}</textarea></div>
             `;
             openModal('viewRequestModal');
             } catch (error) {
@@ -223,10 +282,61 @@
             }
         }
 
+        async function editRequest(id){
+            try {
+                // Используем кэш, если есть, иначе загружаем
+                let reqs = cachedRequests;
+                if (!reqs || !Array.isArray(reqs)) {
+                    reqs = await getRequests();
+                    cachedRequests = reqs;
+                }
+                const r = reqs.find(x=>x.id===id);
+                if(!r) return;
+                // Используем userName из маппинга, делаем запрос только если нужно
+                let user = { fullName: r.userName || 'Гость' };
+                if (!r.userName && r.userId) {
+                    user = await getUserById(r.userId) || user;
+                }
+                const currentStatus = r.status || 'new';
+
+                // Нормализуем статус для сравнения
+                const normalizedStatus = currentStatus.replace(/_/g, '');
+                const statusOptions = `
+                    <option value="new" ${normalizedStatus==='new' ? 'selected' : ''}>Новое</option>
+                    <option value="accepted" ${normalizedStatus==='accepted' ? 'selected' : ''}>Принято</option>
+                    <option value="inprogress" ${normalizedStatus==='inprogress' ? 'selected' : ''}>В работе</option>
+                    <option value="resolved" ${normalizedStatus==='resolved' || normalizedStatus==='done' ? 'selected' : ''}>Выполнено</option>
+                    <option value="rejected" ${normalizedStatus==='rejected' ? 'selected' : ''}>Отклонено</option>
+                `;
+
+                document.getElementById('editRequestDetails').innerHTML = `
+                    <input type="hidden" id="currentRequestId" value="${r.id}">
+                    <div class="form-group"><label>Дата</label><input value="${formatDate(r.createdAt)}" readonly></div>
+                    <div class="form-group"><label>Житель</label><input value="${escapeHtml(user.fullName || r.userName||'-')}" readonly></div>
+                    <div class="form-group"><label>Тема</label><input value="${escapeHtml(r.subject)}" readonly></div>
+                    <div class="form-group"><label>Описание</label><textarea rows="6" readonly>${escapeHtml(r.message||'-')}</textarea></div>
+                    <div class="form-group">
+                        <label for="requestStatusSelect">Статус</label>
+                        <select id="requestStatusSelect">
+                            ${statusOptions}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="requestComment">Комментарий администратора</label>
+                        <textarea id="requestComment" rows="4" placeholder="Добавьте комментарий по заявке...">${escapeHtml(r.adminComment || '')}</textarea>
+                    </div>
+                `;
+                openModal('editRequestModal');
+            } catch (error) {
+                console.error('Failed to edit request:', error);
+                showError('Не удалось загрузить заявку');
+            }
+        }
+
         async function saveRequestChanges() {
             const idInput = document.getElementById('currentRequestId');
             if (!idInput) {
-                closeModal('viewRequestModal');
+                closeModal('editRequestModal');
                 return;
             }
             const id = idInput.value;
@@ -240,7 +350,7 @@
             try {
                 await updateRequest(id, { status, adminComment });
                 showSuccess('Изменения по заявке сохранены');
-                closeModal('viewRequestModal');
+                closeModal('editRequestModal');
                 // Сбрасываем кэш и перезагружаем
                 cachedRequests = null;
                 await loadRequests();
@@ -260,6 +370,19 @@
                 }, 500);
             }
         })();
+
+        // Обработчики фильтров
+        document.getElementById('statusFilter')?.addEventListener('change', () => {
+            if (cachedRequests) {
+                loadRequests();
+            }
+        });
+        
+        document.getElementById('searchFilter')?.addEventListener('input', (e) => {
+            if (cachedRequests) {
+                loadRequests();
+            }
+        });
 
         (async () => {
             await loadRequests();
