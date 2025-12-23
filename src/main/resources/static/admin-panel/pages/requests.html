@@ -43,35 +43,34 @@
             </div>
 
             <div class="content">
+                <!-- Фильтры -->
+                <div class="filters">
+                    <div class="filter-row">
+                        <div class="search-box">
+                            <input type="text" id="searchInput" placeholder="Поиск по теме или жителю..." onkeyup="applyFilters()">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Статус</label>
+                            <select id="statusFilter" onchange="applyFilters()">
+                                <option value="all">Все</option>
+                                <option value="new">Новая</option>
+                                <option value="accepted">Принята</option>
+                                <option value="inprogress">В работе</option>
+                                <option value="resolved">Выполнена</option>
+                                <option value="rejected">Отклонена</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card">
                     <div class="card-header">
                         <h3>Список заявок
-                            <span class="meta"><span id="requestCount" class="count">0</span><span class="label">заявок</span></span>
+                            <span class="meta"><span id="requestCount" class="count">0</span></span>
                         </h3>
                     </div>
                     <div class="card-body">
-                        <!-- Фильтры -->
-                        <div class="filters">
-                            <div class="filter-row">
-                                <div class="filter-group">
-                                    <label>Статус</label>
-                                    <select id="statusFilter">
-                                        <option value="">Все статусы</option>
-                                        <option value="new">Новая</option>
-                                        <option value="accepted">Принята</option>
-                                        <option value="inprogress">В работе</option>
-                                        <option value="resolved">Выполнена</option>
-                                        <option value="rejected">Отклонена</option>
-                                    </select>
-                                </div>
-                                <div class="filter-group">
-                                    <label>Поиск</label>
-                                    <div class="search-box">
-                                        <input type="text" id="searchFilter" placeholder="Поиск по теме или жителю...">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         <div class="table-container">
                             <table>
                                 <thead>
@@ -178,21 +177,22 @@
                 }
                 
                 // Применяем фильтры
-                const statusFilter = document.getElementById('statusFilter')?.value || '';
-                const searchFilter = document.getElementById('searchFilter')?.value.toLowerCase() || '';
+                const statusFilter = document.getElementById('statusFilter')?.value || 'all';
+                const searchInput = document.getElementById('searchInput')?.value.toLowerCase() || '';
                 
                 let filteredReqs = reqs;
-                if (statusFilter) {
+                if (statusFilter && statusFilter !== 'all') {
                     filteredReqs = filteredReqs.filter(r => {
                         const normalizedStatus = (r.status || 'new').replace(/_/g, '');
                         return normalizedStatus === statusFilter;
                     });
                 }
-                if (searchFilter) {
+                if (searchInput) {
                     filteredReqs = filteredReqs.filter(r => {
                         const subject = (r.subject || '').toLowerCase();
                         const userName = (r.userName || '').toLowerCase();
-                        return subject.includes(searchFilter) || userName.includes(searchFilter);
+                        const message = (r.message || '').toLowerCase();
+                        return subject.includes(searchInput) || userName.includes(searchInput) || message.includes(searchInput);
                     });
                 }
                 
@@ -371,18 +371,12 @@
             }
         })();
 
-        // Обработчики фильтров
-        document.getElementById('statusFilter')?.addEventListener('change', () => {
+        // Функция применения фильтров
+        function applyFilters() {
             if (cachedRequests) {
                 loadRequests();
             }
-        });
-        
-        document.getElementById('searchFilter')?.addEventListener('input', (e) => {
-            if (cachedRequests) {
-                loadRequests();
-            }
-        });
+        }
 
         (async () => {
             await loadRequests();
