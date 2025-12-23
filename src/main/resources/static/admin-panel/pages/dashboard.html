@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Домовой - Панель управления</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Боковая панель -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="ri-home-5-line icon-logo"></i> Домовой</h2>
+            </div>
+            
+            <ul class="sidebar-nav">
+                <li><a href="dashboard.html" class="active"><i class="ri-dashboard-line nav-icon"></i> Главная</a></li>
+                <li><a href="users.html"><i class="ri-user-3-line nav-icon"></i> Пользователи</a></li>
+                <li><a href="verification.html"><i class="ri-shield-check-line nav-icon"></i> Верификация</a></li>
+                <li><a href="requests.html"><i class="ri-file-list-3-line nav-icon"></i> Заявки</a></li>
+                <li><a href="news.html"><i class="ri-newspaper-line nav-icon"></i> Новости</a></li>
+                <li><a href="notifications.html"><i class="ri-notification-3-line nav-icon"></i> Уведомления</a></li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">А</div>
+                    <div class="user-details">
+                        <div class="name" id="userName">Администратор</div>
+                        <div class="role">Администратор</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary logout-btn" onclick="logout()">
+                    Выйти
+                </button>
+            </div>
+        </aside>
+
+        <!-- Основной контент -->
+        <main class="main-content">
+            <div class="topbar">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1>Панель управления</h1>
+                <div class="topbar-actions">
+                    <span id="currentDate"></span>
+                </div>
+            </div>
+
+            <div class="content">
+                <!-- Статистика -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue"><i class="ri-user-3-line"></i></div>
+                        <div class="stat-info">
+                            <h3 id="totalUsers">0</h3>
+                            <p>Всего жителей</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon green"><i class="ri-shield-check-line"></i></div>
+                        <div class="stat-info">
+                            <h3 id="verifiedUsers">0</h3>
+                            <p>Верифицировано</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon orange"><i class="ri-file-list-3-line"></i></div>
+                        <div class="stat-info">
+                            <h3 id="newRequests">0</h3>
+                            <p>Новых заявок</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon purple"><i class="ri-time-line"></i></div>
+                        <div class="stat-info">
+                            <h3 id="pendingVerifications">0</h3>
+                            <p>Ожидают верификацию</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Последние заявки -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Последние заявки
+                            <span class="meta"><span id="recentRequestsCount" class="count">0</span><span class="label">заявок</span></span>
+                        </h3>
+                        <a href="requests.html" class="btn btn-primary">Все заявки</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Дата</th>
+                                        <th>Житель</th>
+                                        <th>Тема</th>
+                                        <th>Статус</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentRequests">
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; padding: 40px;">
+                                            <div class="loader"></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ожидающие верификации -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Ожидают верификацию
+                            <span class="meta"><span id="pendingVerificationsCount" class="count">0</span><span class="label">ожидают</span></span>
+                        </h3>
+                        <a href="verification.html" class="btn btn-primary">Все запросы на верификацию</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Дата</th>
+                                        <th>Житель</th>
+                                        <th>Email</th>
+                                        <th>Квартира</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pendingVerificationsList">
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; padding: 40px;">
+                                            <div class="loader"></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/data.js"></script>
+    <script>
+        // Проверка авторизации
+        checkAuth();
+
+        // Отображение информации о пользователе
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (currentUser) {
+            document.getElementById('userName').textContent = currentUser.fullName;
+            document.getElementById('userAvatar').textContent = currentUser.fullName.charAt(0);
+        }
+
+        // Отображение текущей даты (с заглавной буквы для дня недели и месяца)
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const rawDate = new Date().toLocaleDateString('ru-RU', dateOptions);
+        // 
+        // Use a Unicode-aware regex to capitalize the first Cyrillic letter
+        // of each word. \b doesn't reliably detect boundaries for Cyrillic letters
+        // in some browsers, so we match a non-letter or start followed by a Cyrillic.
+        const capitalizeCyrillic = (s) => s.replace(/(^|[^А-Яа-яЁё])([а-яё])/gu, (m, p, ch) => p + ch.toUpperCase());
+        // После капитализации приведём аббревиатуру года к строчному виду ("г.")
+        let capitalized = capitalizeCyrillic(rawDate);
+        // Заменяем заглавную 'Г.' на строчную 'г.' — учитываем возможный предшествующий символ
+        capitalized = capitalized.replace(/(^|[^А-Яа-яЁё])Г\./gu, (m, p1) => (p1 || '') + 'г.');
+        document.getElementById('currentDate').textContent = capitalized;
+
+        // Загрузка статистики
+        async function loadStatistics() {
+            try {
+                const stats = await getStatistics();
+                document.getElementById('totalUsers').textContent = stats.totalUsers;
+                document.getElementById('verifiedUsers').textContent = stats.verifiedUsers;
+                document.getElementById('newRequests').textContent = stats.newRequests;
+                document.getElementById('pendingVerifications').textContent = stats.pendingVerifications;
+            } catch (error) {
+                console.error('Failed to load statistics:', error);
+            }
+        }
+
+        // Загрузка последних заявок
+        async function loadRecentRequests() {
+            try {
+                const requests = await getRequests();
+                const sorted = requests.sort((a, b) => 
+                    new Date(b.createdAt) - new Date(a.createdAt)
+                ).slice(0, 5);
+
+                const tbody = document.getElementById('recentRequests');
+                const recentCountEl = document.getElementById('recentRequestsCount');
+                if (recentCountEl) recentCountEl.textContent = sorted.length;
+                
+                if (sorted.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Нет заявок</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = sorted.map(req => `
+                    <tr>
+                        <td>${formatDateShort(req.createdAt)}</td>
+                        <td>${escapeHtml(req.userName)}</td>
+                        <td>${escapeHtml(req.subject)}</td>
+                        <td><span class="badge ${getStatusBadgeClass(req.status)}">${getStatusText(req.status)}</span></td>
+                        <td>
+                            <a href="requests.html?id=${req.id}" class="btn btn-primary btn-icon" title="Открыть заявку">
+                                <span>🔍</span>
+                            </a>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load recent requests:', error);
+                document.getElementById('recentRequests').innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Ошибка загрузки заявок</td></tr>';
+            }
+        }
+
+        // Загрузка ожидающих верификации
+        async function loadPendingVerifications() {
+            try {
+                const verifications = await getVerifications();
+                const pending = verifications.filter(v => v.status === 'pending')
+                    .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+                    .slice(0, 5);
+
+                const tbody = document.getElementById('pendingVerificationsList');
+                const pendingCountEl = document.getElementById('pendingVerificationsCount');
+                if (pendingCountEl) pendingCountEl.textContent = pending.length;
+                
+                if (pending.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Нет ожидающих верификацию</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = pending.map(verification => `
+                    <tr>
+                        <td>${formatDateShort(verification.submittedAt)}</td>
+                        <td>${escapeHtml(verification.userName)}</td>
+                        <td>${escapeHtml(verification.userEmail)}</td>
+                        <td>кв. ${escapeHtml(verification.apartmentNumber)}</td>
+                        <td>
+                            <a href="verification.html?id=${verification.verificationId}" class="btn btn-primary btn-icon" title="Открыть верификацию">
+                                <span>🔍</span>
+                            </a>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load pending verifications:', error);
+                document.getElementById('pendingVerificationsList').innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Ошибка загрузки верификаций</td></tr>';
+            }
+        }
+
+        // Инициализация
+        (async () => {
+            await Promise.all([
+                loadStatistics(),
+                loadRecentRequests(),
+                loadPendingVerifications()
+            ]);
+        })();
+    </script>
+</body>
+</html>

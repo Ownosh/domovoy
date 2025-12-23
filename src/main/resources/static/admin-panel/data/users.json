@@ -1,0 +1,66 @@
+[
+  {
+    "id": "admin-1",
+    "fullName": "Администратор",
+    "email": "admin@domovoy.ru",
+    "password": "admin123",
+    "role": "admin",
+    "isBlocked": false,
+    "createdAt": "2025-01-01T09:00:00.000Z"
+  },
+  {
+    "id": "user-101",
+    "fullName": "Иванов Иван Иванович",
+    "email": "ivanov@example.com",
+    "password": "demo123",
+    "role": "resident",
+    "phone": "+7 (900) 111-22-33",
+    "isBlocked": false,
+    "createdAt": "2025-01-02T10:00:00.000Z",
+    "verification": {
+      "status": "approved",
+      "apartmentNumber": "45",
+      "submittedAt": "2025-01-03T12:00:00.000Z",
+      "documents": "Договор найма, квитанции об оплате коммунальных услуг."
+    }
+  },
+  {
+    "id": "user-102",
+    "fullName": "Петров Пётр Петрович",
+    "email": "petrov@example.com",
+    "password": "demo123",
+    "role": "resident",
+    "phone": "+7 (900) 222-33-44",
+    "isBlocked": false,
+    "createdAt": "2025-01-02T11:00:00.000Z",
+    "verification": {
+      "status": "pending",
+      "apartmentNumber": "12",
+      "submittedAt": "2025-01-04T15:30:00.000Z",
+      "documents": "Заявление на верификацию, сканы паспорта."
+    }
+  },
+  {
+    "id": "user-103",
+    "fullName": "Сидорова Анна Сергеевна",
+    "email": "sidorova@example.com",
+    "password": "demo123",
+    "role": "resident",
+    "phone": "+7 (900) 333-44-55",
+    "isBlocked": false,
+    "createdAt": "2025-01-02T12:30:00.000Z"
+  }
+]
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,5 +1,6 @@
 package ru.domovoy.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class UserVerification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,10 +25,12 @@ public class UserVerification {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "passwordHash", "deviceTokens", "notificationSettings", "userNotifications", "sentNotifications", "news", "requests", "userVerifications", "reviewedVerifications"})
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "building_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Building building;
 
     @Column(name = "apartment_number", length = 20)
@@ -52,6 +56,7 @@ public class UserVerification {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewed_by")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "passwordHash", "deviceTokens", "notificationSettings", "userNotifications", "sentNotifications", "news", "requests", "userVerifications", "reviewedVerifications"})
     private User reviewedBy;
 
     @Column(name = "rejection_reason", columnDefinition = "TEXT")
@@ -65,6 +70,9 @@ public class UserVerification {
         pending, approved, rejected
     }
 }
+
+
+
 
 
 

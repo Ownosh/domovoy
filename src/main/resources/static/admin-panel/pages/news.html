@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Новости - Домовой</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+    <div class="dashboard">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="ri-home-5-line icon-logo"></i> Домовой</h2>
+            </div>
+            
+            <ul class="sidebar-nav">
+                <li><a href="dashboard.html"><i class="ri-dashboard-line nav-icon"></i> Главная</a></li>
+                <li><a href="users.html"><i class="ri-user-3-line nav-icon"></i> Пользователи</a></li>
+                <li><a href="verification.html"><i class="ri-shield-check-line nav-icon"></i> Верификация</a></li>
+                <li><a href="requests.html"><i class="ri-file-list-3-line nav-icon"></i> Заявки</a></li>
+                <li><a href="news.html" class="active"><i class="ri-newspaper-line nav-icon"></i> Новости</a></li>
+                <li><a href="notifications.html"><i class="ri-notification-3-line nav-icon"></i> Уведомления</a></li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">А</div>
+                    <div class="user-details">
+                        <div class="name" id="userName">Администратор</div>
+                        <div class="role">Администратор</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary logout-btn" onclick="logout()">Выйти</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="topbar">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1>Управление новостями</h1>
+                <div class="topbar-actions">
+                    <button class="btn btn-primary" onclick="openAddNewsModal()">+ Добавить новость</button>
+                </div>
+            </div>
+
+            <div class="content">
+                <!-- Фильтры -->
+                <div class="filters">
+                    <div class="filter-row">
+                        <div class="search-box">
+                            <input type="text" id="searchInput" placeholder="Поиск по заголовку..." onkeyup="filterNews()">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Тип</label>
+                            <select id="filterType" onchange="filterNews()">
+                                <option value="">Все</option>
+                                <option value="news">Новость</option>
+                                <option value="announcement">Объявление</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Статус</label>
+                            <select id="filterStatus" onchange="filterNews()">
+                                <option value="">Все</option>
+                                <option value="published">Опубликовано</option>
+                                <option value="draft">Черновик</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Список новостей -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Список новостей и объявлений
+                            <span class="meta"><span id="newsCount" class="count">0</span><span class="label">записей</span></span>
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Дата</th>
+                                        <th>Заголовок</th>
+                                        <th>Тип</th>
+                                        <th>Автор</th>
+                                        <th>Статус</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="newsTable">
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 40px;">
+                                            <div class="loader"></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Модальное окно добавления/редактирования -->
+    <div class="modal" id="newsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Добавить новость</h2>
+                <button class="modal-close" onclick="closeModal('newsModal')">&times;</button>
+            </div>
+            <form id="newsForm">
+                <input type="hidden" id="newsId">
+                
+                <div class="form-group">
+                    <label for="newsTitle">Заголовок *</label>
+                    <input type="text" id="newsTitle" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="newsType">Тип *</label>
+                    <select id="newsType" required>
+                        <option value="news">Новость</option>
+                        <option value="announcement">Объявление</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="newsCategory">Категория</label>
+                    <select id="newsCategory">
+                        <option value="">Общая</option>
+                        <option value="maintenance">Техническое обслуживание</option>
+                        <option value="meeting">Собрания</option>
+                        <option value="payment">Платежи</option>
+                        <option value="rules">Правила и нормы</option>
+                        <option value="events">События</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="newsContent">Содержание *</label>
+                    <textarea id="newsContent" rows="8" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="newsPublished">Статус публикации *</label>
+                    <select id="newsPublished" required>
+                        <option value="true">Опубликовано</option>
+                        <option value="false">Черновик</option>
+                    </select>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('newsModal')">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно просмотра -->
+    <div class="modal" id="viewNewsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="viewNewsTitle"></h2>
+                <button class="modal-close" onclick="closeModal('viewNewsModal')">&times;</button>
+            </div>
+            <div id="viewNewsContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('viewNewsModal')">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/data.js"></script>
+    <script>
+        checkAuth();
+
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (currentUser) {
+            document.getElementById('userName').textContent = currentUser.fullName;
+            document.getElementById('userAvatar').textContent = currentUser.fullName.charAt(0);
+        }
+
+        let allNews = [];
+
+        async function loadNews() {
+            try {
+                allNews = await getNews();
+                allNews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                displayNews(allNews);
+            } catch (error) {
+                console.error('Failed to load news:', error);
+                allNews = [];
+                displayNews([]);
+            }
+        }
+
+        function displayNews(newsArray) {
+            const tbody = document.getElementById('newsTable');
+            document.getElementById('newsCount').textContent = newsArray.length;
+            
+            if (newsArray.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Новости не найдены</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = newsArray.map(item => `
+                <tr>
+                    <td>${formatDateShort(item.createdAt)}</td>
+                    <td>${escapeHtml(item.title)}</td>
+                    <td><span class="badge ${item.type === 'news' ? 'badge-info' : 'badge-warning'}">${item.type === 'news' ? 'Новость' : 'Объявление'}</span></td>
+                    <td>${escapeHtml(item.authorName || 'Администратор')}</td>
+                    <td><span class="badge ${item.isPublished ? 'badge-success' : 'badge-secondary'}">${item.isPublished ? 'Опубликовано' : 'Черновик'}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary btn-icon" onclick="viewNews('${item.id}')" title="Просмотр">
+                                <span>🔍</span>
+                            </button>
+                            <button class="btn btn-warning btn-icon" onclick="editNews('${item.id}')" title="Редактировать">
+                                <span>✏️</span>
+                            </button>
+                            <button class="btn btn-danger btn-icon" onclick="deleteNewsItem('${item.id}')" title="Удалить">
+                                <span>🗑️</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterNews() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const typeFilter = document.getElementById('filterType').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+
+            let filtered = allNews;
+
+            if (searchTerm) {
+                filtered = filtered.filter(item => 
+                    item.title.toLowerCase().includes(searchTerm) ||
+                    item.content.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            if (typeFilter) {
+                filtered = filtered.filter(item => item.type === typeFilter);
+            }
+
+            if (statusFilter) {
+                const isPublished = statusFilter === 'published';
+                filtered = filtered.filter(item => item.isPublished === isPublished);
+            }
+
+            displayNews(filtered);
+        }
+
+        function openAddNewsModal() {
+            document.getElementById('modalTitle').textContent = 'Добавить новость';
+            document.getElementById('newsForm').reset();
+            document.getElementById('newsId').value = '';
+            document.getElementById('newsPublished').value = 'true';
+            document.getElementById('newsCategory').value = '';
+            openModal('newsModal');
+        }
+
+        async function viewNews(newsId) {
+            const news = await getNewsById(newsId);
+            if (!news) return;
+
+            document.getElementById('viewNewsTitle').textContent = news.title;
+            document.getElementById('viewNewsContent').innerHTML = `
+                <div class="form-group">
+                    <label>Тип</label>
+                    <input type="text" value="${news.type === 'news' ? 'Новость' : 'Объявление'}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Дата публикации</label>
+                    <input type="text" value="${formatDate(news.createdAt)}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Автор</label>
+                    <input type="text" value="${escapeHtml(news.authorName || 'Администратор')}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Содержание</label>
+                    <textarea readonly rows="10">${escapeHtml(news.content)}</textarea>
+                </div>
+            `;
+            openModal('viewNewsModal');
+        }
+
+        async function editNews(newsId) {
+            const news = await getNewsById(newsId);
+            if (!news) return;
+
+            document.getElementById('modalTitle').textContent = 'Редактировать новость';
+            document.getElementById('newsId').value = news.id;
+            document.getElementById('newsTitle').value = news.title;
+            document.getElementById('newsType').value = news.type;
+            document.getElementById('newsCategory').value = news.category || '';
+            document.getElementById('newsContent').value = news.content;
+            document.getElementById('newsPublished').value = news.isPublished ? 'true' : 'false';
+            openModal('newsModal');
+        }
+
+        async function deleteNewsItem(newsId) {
+            const news = await getNewsById(newsId);
+            if (!news) return;
+
+            if (confirmAction(`Вы уверены, что хотите удалить "${news.title}"?`)) {
+                try {
+                    await deleteNews(newsId);
+                    showSuccess('Новость удалена');
+                    await loadNews();
+                } catch (error) {
+                    showError('Не удалось удалить новость');
+                }
+            }
+        }
+
+        document.getElementById('newsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const newsId = document.getElementById('newsId').value;
+            const newsData = {
+                id: newsId || undefined,
+                title: document.getElementById('newsTitle').value.trim(),
+                type: document.getElementById('newsType').value,
+                category: document.getElementById('newsCategory').value || undefined,
+                content: document.getElementById('newsContent').value.trim(),
+                isPublished: document.getElementById('newsPublished').value === 'true',
+                authorId: currentUser.id || currentUser.userId,
+                authorName: currentUser.fullName
+            };
+
+            if (!newsData.title || !newsData.content) {
+                showError('Заполните все обязательные поля');
+                return;
+            }
+
+            try {
+                await saveNews(newsData);
+                showSuccess(newsId ? 'Новость обновлена' : 'Новость добавлена');
+                closeModal('newsModal');
+                await loadNews();
+            } catch (error) {
+                showError('Не удалось сохранить новость');
+            }
+        });
+
+        (async () => {
+            await loadNews();
+        })();
+    </script>
+</body>
+</html>

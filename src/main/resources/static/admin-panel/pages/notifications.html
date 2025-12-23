@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Уведомления - Домовой</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+    <div class="dashboard">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="ri-home-5-line icon-logo"></i> Домовой</h2>
+            </div>
+            
+            <ul class="sidebar-nav">
+                <li><a href="dashboard.html"><i class="ri-dashboard-line nav-icon"></i> Главная</a></li>
+                <li><a href="users.html"><i class="ri-user-3-line nav-icon"></i> Пользователи</a></li>
+                <li><a href="verification.html"><i class="ri-shield-check-line nav-icon"></i> Верификация</a></li>
+                <li><a href="requests.html"><i class="ri-file-list-3-line nav-icon"></i> Заявки</a></li>
+                <li><a href="news.html"><i class="ri-newspaper-line nav-icon"></i> Новости</a></li>
+                <li><a href="notifications.html" class="active"><i class="ri-notification-3-line nav-icon"></i> Уведомления</a></li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">А</div>
+                    <div class="user-details">
+                        <div class="name" id="userName">Администратор</div>
+                        <div class="role">Администратор</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary logout-btn" onclick="logout()" style="width: 100%">Выйти</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="topbar">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1>Push-уведомления</h1>
+                <div class="topbar-actions">
+                    <button class="btn btn-primary" onclick="openSendNotificationModal()">+ Отправить уведомление</button>
+                </div>
+            </div>
+
+            <div class="content">
+                <!-- История уведомлений -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>История отправленных уведомлений
+                            <span class="meta"><span id="notificationCount" class="count">0</span><span class="label">уведомлений</span></span>
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Дата и время</th>
+                                        <th>Заголовок</th>
+                                        <th>Тип</th>
+                                        <th>Аудитория</th>
+                                        <th>Отправитель</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="notificationsTable">
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 40px;">
+                                            <div class="loader"></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Модальное окно отправки уведомления -->
+    <div class="modal" id="sendNotificationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Отправить push-уведомление</h2>
+                <button class="modal-close" onclick="closeModal('sendNotificationModal')">&times;</button>
+            </div>
+            <form id="notificationForm">
+                <div class="form-group">
+                    <label for="notificationType">Тип уведомления *</label>
+                    <select id="notificationType" required>
+                        <option value="general">Общее</option>
+                        <option value="outage">Отключение (вода, свет, отопление)</option>
+                        <option value="meeting">Собрание жильцов</option>
+                        <option value="announcement">Объявление</option>
+                        <option value="emergency">Аварийная ситуация</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notificationTitle">Заголовок *</label>
+                    <input type="text" id="notificationTitle" placeholder="Плановое отключение воды" required maxlength="100">
+                    <small>Максимум 100 символов</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notificationMessage">Сообщение *</label>
+                    <textarea id="notificationMessage" rows="6" placeholder="15 декабря с 10:00 до 14:00 будет отключена холодная вода для проведения профилактических работ." required maxlength="500"></textarea>
+                    <small>Максимум 500 символов</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notificationAudience">Кому отправить *</label>
+                    <select id="notificationAudience" required>
+                        <option value="all">Всем пользователям</option>
+                        <option value="verified">Только верифицированным</option>
+                    </select>
+                </div>
+                
+                <div class="alert alert-info">
+                    Уведомление будет отправлено всем пользователям, у которых включены уведомления данного типа.
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('sendNotificationModal')">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Отправить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно просмотра уведомления -->
+    <div class="modal" id="viewNotificationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Детали уведомления</h2>
+                <button class="modal-close" onclick="closeModal('viewNotificationModal')">&times;</button>
+            </div>
+            <div id="notificationDetails"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('viewNotificationModal')">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/data.js"></script>
+    <script>
+        checkAuth();
+
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (currentUser) {
+            document.getElementById('userName').textContent = currentUser.fullName;
+            document.getElementById('userAvatar').textContent = currentUser.fullName.charAt(0);
+        }
+
+        async function loadNotifications() {
+            try {
+                const notifications = await getNotifications();
+                notifications.sort((a, b) => 
+                    new Date(b.sentAt) - new Date(a.sentAt)
+                );
+                
+                const tbody = document.getElementById('notificationsTable');
+                document.getElementById('notificationCount').textContent = notifications.length;
+                
+                if (notifications.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Нет отправленных уведомлений</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = notifications.map(notif => `
+                    <tr>
+                        <td>${formatDate(notif.sentAt)}</td>
+                        <td>${escapeHtml(notif.title)}</td>
+                        <td><span class="badge ${getNotificationTypeBadge(notif.type)}">${getNotificationTypeText(notif.type)}</span></td>
+                        <td>${getAudienceText(notif.targetAudience)}</td>
+                        <td>${escapeHtml(notif.senderName || 'Администратор')}</td>
+                        <td>
+                            <button class="btn btn-primary btn-icon" onclick="viewNotification('${notif.id}')" title="Просмотр">
+                                <span>🔍</span>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load notifications:', error);
+                document.getElementById('notificationsTable').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Ошибка загрузки уведомлений</td></tr>';
+            }
+        }
+
+        function getNotificationTypeText(type) {
+            const map = {
+                'general': 'Общее',
+                'outage': 'Отключение',
+                'meeting': 'Собрание',
+                'announcement': 'Объявление',
+                'emergency': 'Аварийная ситуация'
+            };
+            return map[type] || type;
+        }
+
+        function getNotificationTypeBadge(type) {
+            const map = {
+                'general': 'badge-info',
+                'outage': 'badge-warning',
+                'meeting': 'badge-info',
+                'announcement': 'badge-secondary',
+                'emergency': 'badge-danger'
+            };
+            return map[type] || 'badge-secondary';
+        }
+
+        function getAudienceText(audience) {
+            const map = {
+                'all': 'Все пользователи',
+                'verified': 'Верифицированные',
+                'specific': 'Выборочно'
+            };
+            return map[audience] || audience;
+        }
+
+        function openSendNotificationModal() {
+            document.getElementById('notificationForm').reset();
+            openModal('sendNotificationModal');
+        }
+
+        async function viewNotification(notifId) {
+            try {
+                const notifications = await getNotifications();
+                const notif = notifications.find(n => n.id === notifId);
+                if (!notif) return;
+
+                document.getElementById('notificationDetails').innerHTML = `
+                    <div class="form-group">
+                        <label>Дата и время отправки</label>
+                        <input type="text" value="${formatDate(notif.sentAt)}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Тип</label>
+                        <input type="text" value="${getNotificationTypeText(notif.type)}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Заголовок</label>
+                        <input type="text" value="${escapeHtml(notif.title)}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Сообщение</label>
+                        <textarea readonly rows="6">${escapeHtml(notif.message)}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Аудитория</label>
+                        <input type="text" value="${getAudienceText(notif.targetAudience)}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Отправитель</label>
+                        <input type="text" value="${escapeHtml(notif.senderName || 'Администратор')}" readonly>
+                    </div>
+                `;
+                openModal('viewNotificationModal');
+            } catch (error) {
+                console.error('Failed to view notification:', error);
+                showError('Не удалось загрузить уведомление');
+            }
+        }
+
+        document.getElementById('notificationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const notification = {
+                type: document.getElementById('notificationType').value,
+                title: document.getElementById('notificationTitle').value.trim(),
+                message: document.getElementById('notificationMessage').value.trim(),
+                targetAudience: document.getElementById('notificationAudience').value,
+                sentBy: currentUser.id || currentUser.userId,
+                senderName: currentUser.fullName
+            };
+
+            if (!notification.title || !notification.message) {
+                showError('Заполните все обязательные поля');
+                return;
+            }
+
+            if (notification.title.length > 100) {
+                showError('Заголовок не должен превышать 100 символов');
+                return;
+            }
+
+            if (notification.message.length > 500) {
+                showError('Сообщение не должно превышать 500 символов');
+                return;
+            }
+
+            // Подтверждение отправки
+            if (!confirmAction(`Отправить уведомление "${notification.title}"?`)) {
+                return;
+            }
+
+            try {
+                await saveNotification(notification);
+                showSuccess('Уведомление отправлено');
+                closeModal('sendNotificationModal');
+                await loadNotifications();
+            } catch (error) {
+                showError('Не удалось отправить уведомление');
+            }
+        });
+
+        (async () => {
+            await loadNotifications();
+        })();
+    </script>
+</body>
+</html>

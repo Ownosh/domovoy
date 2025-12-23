@@ -1,5 +1,7 @@
 package ru.domovoy.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,6 +18,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,6 +41,7 @@ public class Notification {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sent_by")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "passwordHash", "deviceTokens", "notificationSettings", "userNotifications", "sentNotifications", "news", "requests", "userVerifications", "reviewedVerifications"})
     private User sentBy;
 
     @CreationTimestamp
@@ -46,6 +50,7 @@ public class Notification {
 
     // Relationships
     @OneToMany(mappedBy = "notification", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<UserNotification> userNotifications;
 
     public enum NotificationType {
@@ -56,6 +61,9 @@ public class Notification {
         all, verified, specific
     }
 }
+
+
+
 
 
 

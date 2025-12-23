@@ -15,3 +15,5 @@ public interface ResidentialComplexRepository extends JpaRepository<ResidentialC
 
 
 
+
+

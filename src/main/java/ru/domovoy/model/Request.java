@@ -1,5 +1,7 @@
 package ru.domovoy.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,6 +19,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Request {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,6 +28,7 @@ public class Request {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "passwordHash", "deviceTokens", "notificationSettings", "userNotifications", "sentNotifications", "news", "requests", "userVerifications", "reviewedVerifications"})
     private User user;
 
     @Enumerated(EnumType.STRING)
@@ -61,6 +65,7 @@ public class Request {
 
     // Relationships
     @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<RequestAttachment> attachments;
 
     public enum RequestCategory {
@@ -94,6 +99,9 @@ public class Request {
         low, medium, high, urgent
     }
 }
+
+
+
 
 
 

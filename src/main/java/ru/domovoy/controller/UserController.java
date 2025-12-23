@@ -39,7 +39,7 @@ public class UserController {
     public ResponseEntity<User> getUserByEmail(@PathVariable @NonNull String email) {
         Optional<User> user = userService.getUserByEmail(email);
         return user.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     @PostMapping
@@ -71,6 +71,9 @@ public class UserController {
         }
     }
 }
+
+
+
 
 
 

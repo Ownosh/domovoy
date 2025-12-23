@@ -1,5 +1,6 @@
 package ru.domovoy.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class News {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,6 +39,7 @@ public class News {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "passwordHash", "deviceTokens", "notificationSettings", "userNotifications", "sentNotifications", "news", "requests", "userVerifications", "reviewedVerifications"})
     private User author;
 
     @Column(name = "is_published")
@@ -54,6 +57,9 @@ public class News {
         news, announcement
     }
 }
+
+
+
 
 
 
