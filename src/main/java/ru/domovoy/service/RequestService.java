@@ -21,7 +21,7 @@ public class RequestService {
     }
 
     public List<Request> getAllRequests() {
-        return requestRepository.findAll();
+        return requestRepository.findAllWithUser();
     }
 
     public List<Request> getRequestsByUserId(Long userId) {
@@ -62,6 +62,8 @@ public class RequestService {
         requestRepository.deleteById(id);
     }
 }
+
+
 
 
 

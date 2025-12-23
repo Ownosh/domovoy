@@ -20,3 +20,4 @@ public interface BuildingPhotoRepository extends JpaRepository<BuildingPhoto, Lo
 
 
 
+

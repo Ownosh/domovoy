@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.domovoy.model.Notification;
+import ru.domovoy.model.User;
 import ru.domovoy.model.UserNotification;
 import ru.domovoy.repository.NotificationRepository;
 import ru.domovoy.repository.UserNotificationRepository;
@@ -38,6 +39,18 @@ public class NotificationService {
     }
 
     public Notification createNotification(Notification notification) {
+        // Если sentBy передан как объект с userId, загружаем User из базы
+        if (notification.getSentBy() != null) {
+            if (notification.getSentBy().getUserId() != null) {
+                User user = userRepository.findById(notification.getSentBy().getUserId())
+                        .orElseThrow(() -> new RuntimeException("User not found with id: " + notification.getSentBy().getUserId()));
+                notification.setSentBy(user);
+            }
+            // Если sentBy уже полностью загружен, оставляем как есть
+        } else {
+            // Если sentBy не указан, выбрасываем ошибку
+            throw new RuntimeException("sentBy is required");
+        }
         return notificationRepository.save(notification);
     }
 
@@ -71,6 +84,8 @@ public class NotificationService {
         return userNotificationRepository.save(userNotification);
     }
 }
+
+
 
 
 

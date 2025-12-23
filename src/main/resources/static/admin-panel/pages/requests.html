@@ -102,42 +102,91 @@
             document.getElementById('userAvatar').textContent = currentUser.fullName.charAt(0);
         }
 
+        let isLoadingRequests = false;
+        let cachedRequests = null; // Кэш заявок
+        
         async function loadRequests() {
+            // Защита от повторных вызовов
+            if (isLoadingRequests) {
+                console.log('Requests are already loading, skipping...');
+                return;
+            }
+            
+            isLoadingRequests = true;
+            const tbody = document.getElementById('requestsTable');
+            
             try {
+                // Показываем индикатор загрузки
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;"><div class="loader"></div></td></tr>';
+                
                 const reqs = await getRequests();
-                reqs.sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt));
-                const tbody = document.getElementById('requestsTable');
-                document.getElementById('requestCount').textContent = reqs.length;
-                if (reqs.length===0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Заявки не найдены</td></tr>';
+                
+                // Сохраняем в кэш
+                cachedRequests = reqs;
+                
+                // Проверяем, что получили массив
+                if (!Array.isArray(reqs)) {
+                    console.error('getRequests returned non-array:', reqs);
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Ошибка: неверный формат данных</td></tr>';
+                    isLoadingRequests = false;
                     return;
                 }
-                tbody.innerHTML = (await Promise.all(reqs.map(async r => {
-                    const user = await getUserById(r.userId) || {};
-                    return `<tr>
-                        <td>${formatDateShort(r.createdAt)}</td>
-                        <td>${escapeHtml(user.fullName || r.userName || 'Гость')}</td>
-                        <td>${escapeHtml(r.subject)}</td>
-                        <td><span class="badge ${getStatusBadgeClass(r.status)}">${getStatusText(r.status)}</span></td>
+                
+                reqs.sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt));
+                document.getElementById('requestCount').textContent = reqs.length;
+                
+                if (reqs.length===0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Заявки не найдены</td></tr>';
+                    isLoadingRequests = false;
+                    return;
+                }
+                
+                // Используем userName из маппинга, не делаем лишние запросы
+                tbody.innerHTML = reqs.map(r => {
+                    // Проверяем наличие обязательных полей
+                    const id = r.id || r.requestId || '';
+                    const createdAt = r.createdAt || '';
+                    const userName = r.userName || 'Гость';
+                    const subject = r.subject || 'Без темы';
+                    const status = r.status || 'new';
+                    
+                    return `
+                    <tr>
+                        <td>${formatDateShort(createdAt)}</td>
+                        <td>${escapeHtml(userName)}</td>
+                        <td>${escapeHtml(subject)}</td>
+                        <td><span class="badge ${getStatusBadgeClass(status)}">${getStatusText(status)}</span></td>
                         <td>
-                            <button class="btn btn-primary btn-icon" onclick="viewRequest('${r.id}')" title="Просмотр">
+                            <button class="btn btn-primary btn-icon" onclick="viewRequest('${id}')" title="Просмотр">
                                 <span>🔍</span>
                             </button>
                         </td>
-                    </tr>`;
-                }))).join('');
+                    </tr>
+                `;
+                }).join('');
             } catch (error) {
                 console.error('Failed to load requests:', error);
-                document.getElementById('requestsTable').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Ошибка загрузки заявок</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Ошибка загрузки заявок: ' + escapeHtml(error.message || 'Неизвестная ошибка') + '</td></tr>';
+            } finally {
+                isLoadingRequests = false;
             }
         }
 
         async function viewRequest(id){
             try {
-                const reqs = await getRequests();
+                // Используем кэш, если есть, иначе загружаем
+                let reqs = cachedRequests;
+                if (!reqs || !Array.isArray(reqs)) {
+                    reqs = await getRequests();
+                    cachedRequests = reqs;
+                }
                 const r = reqs.find(x=>x.id===id);
                 if(!r) return;
-                const user = await getUserById(r.userId) || {};
+                // Используем userName из маппинга, делаем запрос только если нужно
+                let user = { fullName: r.userName || 'Гость' };
+                if (!r.userName && r.userId) {
+                    user = await getUserById(r.userId) || user;
+                }
                 const currentStatus = r.status || 'new';
 
             // Нормализуем статус для сравнения
@@ -168,6 +217,10 @@
                 </div>
             `;
             openModal('viewRequestModal');
+            } catch (error) {
+                console.error('Failed to view request:', error);
+                showError('Не удалось загрузить заявку');
+            }
         }
 
         async function saveRequestChanges() {
@@ -188,6 +241,8 @@
                 await updateRequest(id, { status, adminComment });
                 showSuccess('Изменения по заявке сохранены');
                 closeModal('viewRequestModal');
+                // Сбрасываем кэш и перезагружаем
+                cachedRequests = null;
                 await loadRequests();
             } catch (error) {
                 showError('Не удалось сохранить изменения');

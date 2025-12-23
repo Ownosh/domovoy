@@ -5,6 +5,7 @@
     // Вспомогательная функция для выполнения HTTP запросов
     async function apiRequest(endpoint, options = {}) {
         const url = `${API_BASE_URL}${endpoint}`;
+        console.log('API Request URL:', url); // Логирование для отладки
         const defaultOptions = {
             headers: {
                 'Content-Type': 'application/json',
@@ -213,11 +214,24 @@
     }
     
     function mapNotificationToApi(notification) {
+        // sentBy может быть ID (число/строка) или объектом с userId
+        let sentByValue = null;
+        if (notification.sentBy) {
+            if (typeof notification.sentBy === 'object' && notification.sentBy.userId) {
+                sentByValue = { userId: notification.sentBy.userId };
+            } else {
+                // Если это просто ID (число или строка)
+                const userId = typeof notification.sentBy === 'string' ? parseInt(notification.sentBy) : notification.sentBy;
+                sentByValue = { userId: userId };
+            }
+        }
+        
         return {
             title: notification.title,
             message: notification.message,
             type: notification.type,
             targetAudience: notification.targetAudience || 'all',
+            sentBy: sentByValue,
         };
     }
     
@@ -339,6 +353,11 @@
     window.apiRequests = {
         async getAll() {
             const requests = await apiRequest('/requests');
+            // Проверяем, что получили массив
+            if (!Array.isArray(requests)) {
+                console.error('API returned non-array for requests:', requests);
+                return [];
+            }
             return requests.map(mapRequestFromApi);
         },
         
