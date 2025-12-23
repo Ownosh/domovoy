@@ -147,6 +147,7 @@
     </div>
 
     <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
     <script src="../js/data.js"></script>
     <script>
         checkAuth();
@@ -157,33 +158,39 @@
             document.getElementById('userAvatar').textContent = currentUser.fullName.charAt(0);
         }
 
-        function loadNotifications() {
-            const notifications = getNotifications().sort((a, b) => 
-                new Date(b.sentAt) - new Date(a.sentAt)
-            );
-            
-            const tbody = document.getElementById('notificationsTable');
-            document.getElementById('notificationCount').textContent = notifications.length;
-            
-            if (notifications.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Нет отправленных уведомлений</td></tr>';
-                return;
-            }
+        async function loadNotifications() {
+            try {
+                const notifications = await getNotifications();
+                notifications.sort((a, b) => 
+                    new Date(b.sentAt) - new Date(a.sentAt)
+                );
+                
+                const tbody = document.getElementById('notificationsTable');
+                document.getElementById('notificationCount').textContent = notifications.length;
+                
+                if (notifications.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Нет отправленных уведомлений</td></tr>';
+                    return;
+                }
 
-            tbody.innerHTML = notifications.map(notif => `
-                <tr>
-                    <td>${formatDate(notif.sentAt)}</td>
-                    <td>${escapeHtml(notif.title)}</td>
-                    <td><span class="badge ${getNotificationTypeBadge(notif.type)}">${getNotificationTypeText(notif.type)}</span></td>
-                    <td>${getAudienceText(notif.targetAudience)}</td>
-                    <td>${escapeHtml(notif.senderName || 'Администратор')}</td>
-                    <td>
-                        <button class="btn btn-primary btn-icon" onclick="viewNotification('${notif.id}')" title="Просмотр">
-                            <span>🔍</span>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+                tbody.innerHTML = notifications.map(notif => `
+                    <tr>
+                        <td>${formatDate(notif.sentAt)}</td>
+                        <td>${escapeHtml(notif.title)}</td>
+                        <td><span class="badge ${getNotificationTypeBadge(notif.type)}">${getNotificationTypeText(notif.type)}</span></td>
+                        <td>${getAudienceText(notif.targetAudience)}</td>
+                        <td>${escapeHtml(notif.senderName || 'Администратор')}</td>
+                        <td>
+                            <button class="btn btn-primary btn-icon" onclick="viewNotification('${notif.id}')" title="Просмотр">
+                                <span>🔍</span>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load notifications:', error);
+                document.getElementById('notificationsTable').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Ошибка загрузки уведомлений</td></tr>';
+            }
         }
 
         function getNotificationTypeText(type) {
@@ -222,41 +229,46 @@
             openModal('sendNotificationModal');
         }
 
-        function viewNotification(notifId) {
-            const notifications = getNotifications();
-            const notif = notifications.find(n => n.id === notifId);
-            if (!notif) return;
+        async function viewNotification(notifId) {
+            try {
+                const notifications = await getNotifications();
+                const notif = notifications.find(n => n.id === notifId);
+                if (!notif) return;
 
-            document.getElementById('notificationDetails').innerHTML = `
-                <div class="form-group">
-                    <label>Дата и время отправки</label>
-                    <input type="text" value="${formatDate(notif.sentAt)}" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Тип</label>
-                    <input type="text" value="${getNotificationTypeText(notif.type)}" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Заголовок</label>
-                    <input type="text" value="${escapeHtml(notif.title)}" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Сообщение</label>
-                    <textarea readonly rows="6">${escapeHtml(notif.message)}</textarea>
-                </div>
-                <div class="form-group">
-                    <label>Аудитория</label>
-                    <input type="text" value="${getAudienceText(notif.targetAudience)}" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Отправитель</label>
-                    <input type="text" value="${escapeHtml(notif.senderName || 'Администратор')}" readonly>
-                </div>
-            `;
-            openModal('viewNotificationModal');
+                document.getElementById('notificationDetails').innerHTML = `
+                    <div class="form-group">
+                        <label>Дата и время отправки</label>
+                        <input type="text" value="${formatDate(notif.sentAt)}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Тип</label>
+                        <input type="text" value="${getNotificationTypeText(notif.type)}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Заголовок</label>
+                        <input type="text" value="${escapeHtml(notif.title)}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Сообщение</label>
+                        <textarea readonly rows="6">${escapeHtml(notif.message)}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Аудитория</label>
+                        <input type="text" value="${getAudienceText(notif.targetAudience)}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Отправитель</label>
+                        <input type="text" value="${escapeHtml(notif.senderName || 'Администратор')}" readonly>
+                    </div>
+                `;
+                openModal('viewNotificationModal');
+            } catch (error) {
+                console.error('Failed to view notification:', error);
+                showError('Не удалось загрузить уведомление');
+            }
         }
 
-        document.getElementById('notificationForm').addEventListener('submit', (e) => {
+        document.getElementById('notificationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const notification = {
@@ -264,7 +276,7 @@
                 title: document.getElementById('notificationTitle').value.trim(),
                 message: document.getElementById('notificationMessage').value.trim(),
                 targetAudience: document.getElementById('notificationAudience').value,
-                sentBy: currentUser.id,
+                sentBy: currentUser.id || currentUser.userId,
                 senderName: currentUser.fullName
             };
 
@@ -288,13 +300,19 @@
                 return;
             }
 
-            saveNotification(notification);
-            showSuccess('Уведомление отправлено');
-            closeModal('sendNotificationModal');
-            loadNotifications();
+            try {
+                await saveNotification(notification);
+                showSuccess('Уведомление отправлено');
+                closeModal('sendNotificationModal');
+                await loadNotifications();
+            } catch (error) {
+                showError('Не удалось отправить уведомление');
+            }
         });
 
-        loadNotifications();
+        (async () => {
+            await loadNotifications();
+        })();
     </script>
 </body>
 </html>

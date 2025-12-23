@@ -92,6 +92,7 @@
     </div>
 
     <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
     <script src="../js/data.js"></script>
     <script>
         checkAuth();
@@ -101,39 +102,52 @@
             document.getElementById('userAvatar').textContent = currentUser.fullName.charAt(0);
         }
 
-        function loadRequests() {
-            const reqs = getRequests().sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt));
-            const tbody = document.getElementById('requestsTable');
-            document.getElementById('requestCount').textContent = reqs.length;
-            if (reqs.length===0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Заявки не найдены</td></tr>';
-                return;
+        async function loadRequests() {
+            try {
+                const reqs = await getRequests();
+                reqs.sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt));
+                const tbody = document.getElementById('requestsTable');
+                document.getElementById('requestCount').textContent = reqs.length;
+                if (reqs.length===0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Заявки не найдены</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = (await Promise.all(reqs.map(async r => {
+                    const user = await getUserById(r.userId) || {};
+                    return `<tr>
+                        <td>${formatDateShort(r.createdAt)}</td>
+                        <td>${escapeHtml(user.fullName || r.userName || 'Гость')}</td>
+                        <td>${escapeHtml(r.subject)}</td>
+                        <td><span class="badge ${getStatusBadgeClass(r.status)}">${getStatusText(r.status)}</span></td>
+                        <td>
+                            <button class="btn btn-primary btn-icon" onclick="viewRequest('${r.id}')" title="Просмотр">
+                                <span>🔍</span>
+                            </button>
+                        </td>
+                    </tr>`;
+                }))).join('');
+            } catch (error) {
+                console.error('Failed to load requests:', error);
+                document.getElementById('requestsTable').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Ошибка загрузки заявок</td></tr>';
             }
-            tbody.innerHTML = reqs.map(r=>`<tr>
-                <td>${formatDateShort(r.createdAt)}</td>
-                <td>${escapeHtml((getUserById(r.userId)||{fullName:r.userName||'Гость'}).fullName)}</td>
-                <td>${escapeHtml(r.subject)}</td>
-                <td><span class="badge ${getStatusBadgeClass(r.status)}">${getStatusText(r.status)}</span></td>
-                <td>
-                    <button class="btn btn-primary btn-icon" onclick="viewRequest('${r.id}')" title="Просмотр">
-                        <span>🔍</span>
-                    </button>
-                </td>
-            </tr>`).join('');
         }
 
-        function viewRequest(id){
-            const r = getRequests().find(x=>x.id===id);
-            if(!r) return;
-            const user = getUserById(r.userId)||{};
-            const currentStatus = r.status || 'new';
+        async function viewRequest(id){
+            try {
+                const reqs = await getRequests();
+                const r = reqs.find(x=>x.id===id);
+                if(!r) return;
+                const user = await getUserById(r.userId) || {};
+                const currentStatus = r.status || 'new';
 
+            // Нормализуем статус для сравнения
+            const normalizedStatus = currentStatus.replace(/_/g, '');
             const statusOptions = `
-                <option value="new" ${currentStatus==='new' ? 'selected' : ''}>Новое</option>
-                <option value="accepted" ${currentStatus==='accepted' ? 'selected' : ''}>Принято</option>
-                <option value="inprogress" ${currentStatus==='inprogress' ? 'selected' : ''}>В работе</option>
-                <option value="done" ${currentStatus==='done' ? 'selected' : ''}>Выполнено</option>
-                <option value="rejected" ${currentStatus==='rejected' ? 'selected' : ''}>Отклонено</option>
+                <option value="new" ${normalizedStatus==='new' ? 'selected' : ''}>Новое</option>
+                <option value="accepted" ${normalizedStatus==='accepted' ? 'selected' : ''}>Принято</option>
+                <option value="inprogress" ${normalizedStatus==='inprogress' || normalizedStatus==='inprogress' ? 'selected' : ''}>В работе</option>
+                <option value="resolved" ${normalizedStatus==='resolved' || normalizedStatus==='done' ? 'selected' : ''}>Выполнено</option>
+                <option value="rejected" ${normalizedStatus==='rejected' ? 'selected' : ''}>Отклонено</option>
             `;
 
             document.getElementById('requestDetails').innerHTML = `
@@ -156,7 +170,7 @@
             openModal('viewRequestModal');
         }
 
-        function saveRequestChanges() {
+        async function saveRequestChanges() {
             const idInput = document.getElementById('currentRequestId');
             if (!idInput) {
                 closeModal('viewRequestModal');
@@ -170,25 +184,31 @@
             const status = statusEl.value;
             const adminComment = commentEl.value.trim();
 
-            updateRequest(id, { status, adminComment });
-            showSuccess('Изменения по заявке сохранены');
-            closeModal('viewRequestModal');
-            loadRequests();
+            try {
+                await updateRequest(id, { status, adminComment });
+                showSuccess('Изменения по заявке сохранены');
+                closeModal('viewRequestModal');
+                await loadRequests();
+            } catch (error) {
+                showError('Не удалось сохранить изменения');
+            }
         }
 
         // Поддержка открытия по ссылке ?id=...
-        (function handleDeepLink() {
+        (async function handleDeepLink() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
             if (id) {
                 // дождаться первоначальной отрисовки
-                setTimeout(() => {
-                    viewRequest(id);
-                }, 0);
+                setTimeout(async () => {
+                    await viewRequest(id);
+                }, 500);
             }
         })();
 
-        loadRequests();
+        (async () => {
+            await loadRequests();
+        })();
     </script>
 </body>
 </html>

@@ -10,3 +10,8 @@ public interface AreaCategoryRepository extends JpaRepository<AreaCategory, Long
 
 
 
+
+
+
+
+

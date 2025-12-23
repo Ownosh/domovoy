@@ -179,6 +179,7 @@
     </div>
 
     <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
     <script src="../js/data.js"></script>
     <script>
         checkAuth();
@@ -191,9 +192,16 @@
 
         let allNews = [];
 
-        function loadNews() {
-            allNews = getNews().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            displayNews(allNews);
+        async function loadNews() {
+            try {
+                allNews = await getNews();
+                allNews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                displayNews(allNews);
+            } catch (error) {
+                console.error('Failed to load news:', error);
+                allNews = [];
+                displayNews([]);
+            }
         }
 
         function displayNews(newsArray) {
@@ -264,8 +272,8 @@
             openModal('newsModal');
         }
 
-        function viewNews(newsId) {
-            const news = getNewsById(newsId);
+        async function viewNews(newsId) {
+            const news = await getNewsById(newsId);
             if (!news) return;
 
             document.getElementById('viewNewsTitle').textContent = news.title;
@@ -290,8 +298,8 @@
             openModal('viewNewsModal');
         }
 
-        function editNews(newsId) {
-            const news = getNewsById(newsId);
+        async function editNews(newsId) {
+            const news = await getNewsById(newsId);
             if (!news) return;
 
             document.getElementById('modalTitle').textContent = 'Редактировать новость';
@@ -304,18 +312,22 @@
             openModal('newsModal');
         }
 
-        function deleteNewsItem(newsId) {
-            const news = getNewsById(newsId);
+        async function deleteNewsItem(newsId) {
+            const news = await getNewsById(newsId);
             if (!news) return;
 
             if (confirmAction(`Вы уверены, что хотите удалить "${news.title}"?`)) {
-                deleteNews(newsId);
-                showSuccess('Новость удалена');
-                loadNews();
+                try {
+                    await deleteNews(newsId);
+                    showSuccess('Новость удалена');
+                    await loadNews();
+                } catch (error) {
+                    showError('Не удалось удалить новость');
+                }
             }
         }
 
-        document.getElementById('newsForm').addEventListener('submit', (e) => {
+        document.getElementById('newsForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const newsId = document.getElementById('newsId').value;
@@ -326,7 +338,7 @@
                 category: document.getElementById('newsCategory').value || undefined,
                 content: document.getElementById('newsContent').value.trim(),
                 isPublished: document.getElementById('newsPublished').value === 'true',
-                authorId: currentUser.id,
+                authorId: currentUser.id || currentUser.userId,
                 authorName: currentUser.fullName
             };
 
@@ -335,13 +347,19 @@
                 return;
             }
 
-            saveNews(newsData);
-            showSuccess(newsId ? 'Новость обновлена' : 'Новость добавлена');
-            closeModal('newsModal');
-            loadNews();
+            try {
+                await saveNews(newsData);
+                showSuccess(newsId ? 'Новость обновлена' : 'Новость добавлена');
+                closeModal('newsModal');
+                await loadNews();
+            } catch (error) {
+                showError('Не удалось сохранить новость');
+            }
         });
 
-        loadNews();
+        (async () => {
+            await loadNews();
+        })();
     </script>
 </body>
 </html>

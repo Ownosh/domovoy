@@ -33,7 +33,9 @@
     // Статусы заявок/верификаций → css-класс бэйджа
     window.getStatusBadgeClass = function(status) {
         if (!status || status === 'none') return 'badge-secondary';
-        switch (status) {
+        // Нормализуем статус (убираем подчеркивания)
+        const normalized = status.replace(/_/g, '');
+        switch (normalized) {
             case 'new':
                 return 'badge-info';
             case 'accepted':
@@ -42,6 +44,7 @@
             case 'pending':
                 return 'badge-warning';
             case 'done':
+            case 'resolved':
             case 'approved':
                 return 'badge-success';
             case 'rejected':
@@ -53,16 +56,18 @@
 
     // Человекочитаемый текст статуса заявки
     window.getStatusText = function(status) {
-        switch (status) {
+        if (!status) return 'Новая';
+        // Нормализуем статус
+        const normalized = status.replace(/_/g, '');
+        switch (normalized) {
             case 'new':
-            case undefined:
-            case null:
                 return 'Новая';
             case 'accepted':
                 return 'Принята';
             case 'inprogress':
                 return 'В работе';
             case 'done':
+            case 'resolved':
                 return 'Выполнена';
             case 'rejected':
                 return 'Отклонена';

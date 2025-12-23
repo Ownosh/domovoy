@@ -13,3 +13,8 @@ public interface BuildingRepository extends JpaRepository<Building, Long> {
 
 
 
+
+
+
+
+

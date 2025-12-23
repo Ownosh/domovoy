@@ -153,6 +153,7 @@
     </div>
 
     <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
     <script src="../js/data.js"></script>
     <script>
         // Проверка авторизации
@@ -180,80 +181,98 @@
         document.getElementById('currentDate').textContent = capitalized;
 
         // Загрузка статистики
-        function loadStatistics() {
-            const stats = getStatistics();
-            document.getElementById('totalUsers').textContent = stats.totalUsers;
-            document.getElementById('verifiedUsers').textContent = stats.verifiedUsers;
-            document.getElementById('newRequests').textContent = stats.newRequests;
-            document.getElementById('pendingVerifications').textContent = stats.pendingVerifications;
+        async function loadStatistics() {
+            try {
+                const stats = await getStatistics();
+                document.getElementById('totalUsers').textContent = stats.totalUsers;
+                document.getElementById('verifiedUsers').textContent = stats.verifiedUsers;
+                document.getElementById('newRequests').textContent = stats.newRequests;
+                document.getElementById('pendingVerifications').textContent = stats.pendingVerifications;
+            } catch (error) {
+                console.error('Failed to load statistics:', error);
+            }
         }
 
         // Загрузка последних заявок
-        function loadRecentRequests() {
-            const requests = getRequests().sort((a, b) => 
-                new Date(b.createdAt) - new Date(a.createdAt)
-            ).slice(0, 5);
+        async function loadRecentRequests() {
+            try {
+                const requests = await getRequests();
+                const sorted = requests.sort((a, b) => 
+                    new Date(b.createdAt) - new Date(a.createdAt)
+                ).slice(0, 5);
 
-            const tbody = document.getElementById('recentRequests');
-            const recentCountEl = document.getElementById('recentRequestsCount');
-            if (recentCountEl) recentCountEl.textContent = requests.length;
-            
-            if (requests.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Нет заявок</td></tr>';
-                return;
+                const tbody = document.getElementById('recentRequests');
+                const recentCountEl = document.getElementById('recentRequestsCount');
+                if (recentCountEl) recentCountEl.textContent = sorted.length;
+                
+                if (sorted.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Нет заявок</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = sorted.map(req => `
+                    <tr>
+                        <td>${formatDateShort(req.createdAt)}</td>
+                        <td>${escapeHtml(req.userName)}</td>
+                        <td>${escapeHtml(req.subject)}</td>
+                        <td><span class="badge ${getStatusBadgeClass(req.status)}">${getStatusText(req.status)}</span></td>
+                        <td>
+                            <a href="requests.html?id=${req.id}" class="btn btn-primary btn-icon" title="Открыть заявку">
+                                <span>🔍</span>
+                            </a>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load recent requests:', error);
+                document.getElementById('recentRequests').innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Ошибка загрузки заявок</td></tr>';
             }
-
-            tbody.innerHTML = requests.map(req => `
-                <tr>
-                    <td>${formatDateShort(req.createdAt)}</td>
-                    <td>${escapeHtml(req.userName)}</td>
-                    <td>${escapeHtml(req.subject)}</td>
-                    <td><span class="badge ${getStatusBadgeClass(req.status)}">${getStatusText(req.status)}</span></td>
-                    <td>
-                        <a href="requests.html?id=${req.id}" class="btn btn-primary btn-icon" title="Открыть заявку">
-                            <span>🔍</span>
-                        </a>
-                    </td>
-                </tr>
-            `).join('');
         }
 
         // Загрузка ожидающих верификации
-        function loadPendingVerifications() {
-            const users = getUsers().filter(u => 
-                u.verification && u.verification.status === 'pending'
-            ).sort((a, b) => 
-                new Date(b.verification.submittedAt) - new Date(a.verification.submittedAt)
-            ).slice(0, 5);
+        async function loadPendingVerifications() {
+            try {
+                const verifications = await getVerifications();
+                const pending = verifications.filter(v => v.status === 'pending')
+                    .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+                    .slice(0, 5);
 
-            const tbody = document.getElementById('pendingVerificationsList');
-            const pendingCountEl = document.getElementById('pendingVerificationsCount');
-            if (pendingCountEl) pendingCountEl.textContent = users.length;
-            
-            if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Нет ожидающих верификацию</td></tr>';
-                return;
+                const tbody = document.getElementById('pendingVerificationsList');
+                const pendingCountEl = document.getElementById('pendingVerificationsCount');
+                if (pendingCountEl) pendingCountEl.textContent = pending.length;
+                
+                if (pending.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Нет ожидающих верификацию</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = pending.map(verification => `
+                    <tr>
+                        <td>${formatDateShort(verification.submittedAt)}</td>
+                        <td>${escapeHtml(verification.userName)}</td>
+                        <td>${escapeHtml(verification.userEmail)}</td>
+                        <td>кв. ${escapeHtml(verification.apartmentNumber)}</td>
+                        <td>
+                            <a href="verification.html?id=${verification.verificationId}" class="btn btn-primary btn-icon" title="Открыть верификацию">
+                                <span>🔍</span>
+                            </a>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load pending verifications:', error);
+                document.getElementById('pendingVerificationsList').innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Ошибка загрузки верификаций</td></tr>';
             }
-
-            tbody.innerHTML = users.map(user => `
-                <tr>
-                    <td>${formatDateShort(user.verification.submittedAt)}</td>
-                    <td>${escapeHtml(user.fullName)}</td>
-                    <td>${escapeHtml(user.email)}</td>
-                    <td>кв. ${escapeHtml(user.verification.apartmentNumber)}</td>
-                    <td>
-                        <a href="verification.html?id=${user.id}" class="btn btn-primary btn-icon" title="Открыть верификацию">
-                            <span>🔍</span>
-                        </a>
-                    </td>
-                </tr>
-            `).join('');
         }
 
         // Инициализация
-        loadStatistics();
-        loadRecentRequests();
-        loadPendingVerifications();
+        (async () => {
+            await Promise.all([
+                loadStatistics(),
+                loadRecentRequests(),
+                loadPendingVerifications()
+            ]);
+        })();
     </script>
 </body>
 </html>

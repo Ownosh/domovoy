@@ -1,303 +1,231 @@
-// Простая клиентская "бд" на localStorage для демо
+// API обёртка для работы с бэкендом
 (function(){
-    const KEYS = {
-        users: 'domovoy_users',
-        notifications: 'domovoy_notifications',
-        news: 'domovoy_news',
-        requests: 'domovoy_requests'
-    };
-
-    function generateId(prefix){
-        return (prefix?prefix+'-':'') + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,9);
-    }
-
-    function read(key){
-        try {
-            const raw = localStorage.getItem(key);
-            return raw ? JSON.parse(raw) : null;
-        } catch(e){
-            console.error('read', key, e);
-            return null;
-        }
-    }
-
-    function write(key, value){
-        try {
-            localStorage.setItem(key, JSON.stringify(value));
-        } catch(e){
-            console.error('write', key, e);
-        }
-    }
-
+    // Кэш для данных (опционально, можно убрать для всегда свежих данных)
+    let usersCache = null;
+    let newsCache = null;
+    let requestsCache = null;
+    let notificationsCache = null;
+    let verificationsCache = null;
+    
     // Users
-    window.getUsers = function(){
-        let users = read(KEYS.users);
-        if (!users) {
-            const now = new Date().toISOString();
-            users = [
-                {
-                    id: 'admin-1',
-                    fullName: 'Администратор',
-                    email: 'admin@domovoy.ru',
-                    password: 'admin123',
-                    role: 'admin',
-                    isBlocked: false,
-                    createdAt: now
-                },
-                {
-                    id: 'user-101',
-                    fullName: 'Иванов Иван Иванович',
-                    email: 'ivanov@example.com',
-                    password: 'demo123',
-                    role: 'resident',
-                    phone: '+7 (900) 111-22-33',
-                    isBlocked: false,
-                    createdAt: now,
-                    verification: {
-                        status: 'approved',
-                        apartmentNumber: '45',
-                        submittedAt: now,
-                        documents: 'Договор найма, квитанции об оплате коммунальных услуг.'
-                    }
-                },
-                {
-                    id: 'user-102',
-                    fullName: 'Петров Пётр Петрович',
-                    email: 'petrov@example.com',
-                    password: 'demo123',
-                    role: 'resident',
-                    phone: '+7 (900) 222-33-44',
-                    isBlocked: false,
-                    createdAt: now,
-                    verification: {
-                        status: 'pending',
-                        apartmentNumber: '12',
-                        submittedAt: now,
-                        documents: 'Заявление на верификацию, сканы паспорта.'
-                    }
-                },
-                {
-                    id: 'user-103',
-                    fullName: 'Сидорова Анна Сергеевна',
-                    email: 'sidorova@example.com',
-                    password: 'demo123',
-                    role: 'resident',
-                    phone: '+7 (900) 333-44-55',
-                    isBlocked: false,
-                    createdAt: now
-                }
-            ];
-            write(KEYS.users, users);
+    window.getUsers = async function(){
+        try {
+            const users = await window.apiUsers.getAll();
+            usersCache = users;
+            return users;
+        } catch (error) {
+            console.error('Failed to fetch users:', error);
+            showError('Не удалось загрузить пользователей');
+            return usersCache || [];
         }
-        return users;
     };
 
-    window.saveUsers = function(users){ write(KEYS.users, users); };
+    window.saveUsers = async function(users){
+        // Эта функция больше не используется, но оставляем для совместимости
+        console.warn('saveUsers is deprecated, use individual user save/update methods');
+    };
 
     // Notifications
-    window.getNotifications = function(){
-        const n = read(KEYS.notifications);
-        if (Array.isArray(n)) return n;
-
-        const now = new Date().toISOString();
-        const seed = [
-            {
-                id: 'notif-1',
-                type: 'outage',
-                title: 'Плановое отключение воды',
-                message: '15 декабря с 10:00 до 14:00 будет отключена холодная вода для проведения профилактических работ. Приносим извинения за временные неудобства.',
-                targetAudience: 'all',
-                sentBy: 'admin-1',
-                senderName: 'Администратор',
-                sentAt: now
-            },
-            {
-                id: 'notif-2',
-                type: 'meeting',
-                title: 'Общее собрание жильцов',
-                message: '20 декабря в 19:00 в помещении УК состоится общее собрание жильцов. Повестка: отчёт УК и обсуждение планов на следующий год.',
-                targetAudience: 'verified',
-                sentBy: 'admin-1',
-                senderName: 'Администратор',
-                sentAt: now
-            }
-        ];
-        write(KEYS.notifications, seed);
-        return seed;
+    window.getNotifications = async function(){
+        try {
+            const notifications = await window.apiNotifications.getAll();
+            notificationsCache = notifications;
+            return notifications;
+        } catch (error) {
+            console.error('Failed to fetch notifications:', error);
+            showError('Не удалось загрузить уведомления');
+            return notificationsCache || [];
+        }
     };
 
-    window.saveNotification = function(notification){
-        const all = getNotifications();
-        const now = new Date().toISOString();
-        const item = Object.assign({}, notification, {
-            id: generateId('notif'),
-            sentAt: now
-        });
-        all.push(item);
-        write(KEYS.notifications, all);
+    window.saveNotification = async function(notification){
+        try {
+            const created = await window.apiNotifications.create(notification);
+            notificationsCache = null; // Сбрасываем кэш
+            return created;
+        } catch (error) {
+            console.error('Failed to create notification:', error);
+            showError('Не удалось создать уведомление');
+            throw error;
+        }
     };
 
     // News
-    window.getNews = function(){
-        const n = read(KEYS.news);
-        if (Array.isArray(n)) return n;
-
-        const now = new Date().toISOString();
-        const seed = [
-            {
-                id: 'news-1',
-                type: 'news',
-                title: 'Запуск новой системы «Домовой»',
-                content: 'Мы запустили новую систему взаимодействия с управляющей компанией. Теперь вы можете отправлять заявки, получать уведомления и новости прямо в приложении.',
-                isPublished: true,
-                authorId: 'admin-1',
-                authorName: 'Администратор',
-                createdAt: now
-            },
-            {
-                id: 'news-2',
-                type: 'announcement',
-                title: 'Уборка подъездов по новому графику',
-                content: 'С 1 января уборка подъездов будет проводиться два раза в неделю. Подробный график размещён на информационных стендах и в мобильном приложении.',
-                isPublished: true,
-                authorId: 'admin-1',
-                authorName: 'Администратор',
-                createdAt: now
-            }
-        ];
-        write(KEYS.news, seed);
-        return seed;
+    window.getNews = async function(){
+        try {
+            const news = await window.apiNews.getAll();
+            newsCache = news;
+            return news;
+        } catch (error) {
+            console.error('Failed to fetch news:', error);
+            showError('Не удалось загрузить новости');
+            return newsCache || [];
+        }
     };
 
-    // Внутренние функции для работы с новостями (не светим в глобальной области,
-    // чтобы не пересекаться с функциями на странице управления новостями)
-    function saveNewsInternal(news){
-        const all = getNews();
-        if (news.id) {
-            const idx = all.findIndex(n => n.id === news.id);
-            if (idx !== -1) {
-                all[idx] = Object.assign({}, all[idx], news);
-                write(KEYS.news, all);
-                return;
-            }
+    window.getNewsById = async function(id){
+        try {
+            return await window.apiNews.getById(id);
+        } catch (error) {
+            console.error('Failed to fetch news by id:', error);
+            return null;
         }
-        const item = Object.assign({}, news, {
-            id: generateId('news'),
-            createdAt: new Date().toISOString()
-        });
-        all.push(item);
-        write(KEYS.news, all);
-    }
+    };
 
-    function deleteNewsInternal(newsId){
-        const all = getNews();
-        const filtered = all.filter(n => n.id !== newsId);
-        write(KEYS.news, filtered);
-    }
+    window.saveNews = async function(news){
+        try {
+            if (news.id) {
+                const updated = await window.apiNews.update(news.id, news);
+                newsCache = null; // Сбрасываем кэш
+                return updated;
+            } else {
+                const created = await window.apiNews.create(news);
+                newsCache = null; // Сбрасываем кэш
+                return created;
+            }
+        } catch (error) {
+            console.error('Failed to save news:', error);
+            showError('Не удалось сохранить новость');
+            throw error;
+        }
+    };
+
+    window.deleteNews = async function(id){
+        try {
+            await window.apiNews.delete(id);
+            newsCache = null; // Сбрасываем кэш
+        } catch (error) {
+            console.error('Failed to delete news:', error);
+            showError('Не удалось удалить новость');
+            throw error;
+        }
+    };
 
     // Requests (заявки)
-    window.getRequests = function(){
-        const r = read(KEYS.requests);
-        if (Array.isArray(r)) return r;
-
-        const now = new Date().toISOString();
-        const seed = [
-            {
-                id: 'req-1',
-                userId: 'user-101',
-                userName: 'Иванов Иван Иванович',
-                subject: 'Протечка в подвале',
-                message: 'Обнаружена протечка трубы в подвале возле 3-го подъезда. Нужен приход слесаря.',
-                status: 'inprogress',
-                adminComment: 'Заявка передана слесарю.',
-                createdAt: now
-            },
-            {
-                id: 'req-2',
-                userId: 'user-102',
-                userName: 'Петров Пётр Петрович',
-                subject: 'Не работает освещение на лестничной клетке',
-                message: 'На площадке между 5 и 6 этажами перегорела лампочка.',
-                status: 'new',
-                adminComment: '',
-                createdAt: now
-            },
-            {
-                id: 'req-3',
-                userId: 'user-103',
-                userName: 'Сидорова Анна Сергеевна',
-                subject: 'Шум в ночное время',
-                message: 'Соседи с квартиры 37 регулярно шумят после 23:00. Просьба принять меры.',
-                status: 'done',
-                adminComment: 'Шум прекратился после беседы с жильцами.',
-                createdAt: now
-            }
-        ];
-        write(KEYS.requests, seed);
-        return seed;
-    };
-
-    // В текущей демо-версии администратор не создаёт заявки вручную,
-    // они «приходят» из внешней системы. Оставляем только обновление.
-    window.saveRequest = function(req){
-        const all = getRequests();
-        const item = Object.assign({}, req, {
-            id: generateId('req'),
-            createdAt: new Date().toISOString()
-        });
-        all.push(item);
-        write(KEYS.requests, all);
-    };
-
-    window.updateRequest = function(id, patch){
-        const all = getRequests();
-        const idx = all.findIndex(r => r.id === id);
-        if (idx === -1) return;
-        all[idx] = Object.assign({}, all[idx], patch);
-        write(KEYS.requests, all);
-    };
-
-    // Helpers and missing API used by pages
-    window.getUserById = function(userId){
-        if (!userId) return null;
-        return getUsers().find(u => u.id === userId) || null;
-    };
-
-    window.saveUser = function(user){
-        const users = getUsers();
-        if (!user.id) {
-            user.id = generateId('user');
-            user.createdAt = new Date().toISOString();
-            users.push(user);
-            write(KEYS.users, users);
-            return;
+    window.getRequests = async function(){
+        try {
+            const requests = await window.apiRequests.getAll();
+            requestsCache = requests;
+            return requests;
+        } catch (error) {
+            console.error('Failed to fetch requests:', error);
+            showError('Не удалось загрузить заявки');
+            return requestsCache || [];
         }
-        const idx = users.findIndex(u => u.id === user.id);
-        if (idx !== -1) { users[idx] = Object.assign({}, users[idx], user); write(KEYS.users, users); return; }
-        users.push(Object.assign({}, user));
-        write(KEYS.users, users);
     };
 
-    window.getNewsById = function(id){
-        return getNews().find(n => n.id === id) || null;
+    window.saveRequest = async function(req){
+        try {
+            const created = await window.apiRequests.create(req);
+            requestsCache = null; // Сбрасываем кэш
+            return created;
+        } catch (error) {
+            console.error('Failed to create request:', error);
+            showError('Не удалось создать заявку');
+            throw error;
+        }
     };
 
-    window.saveNews = function(news){
-        return saveNewsInternal(news);
+    window.updateRequest = async function(id, patch){
+        try {
+            // Сначала получаем текущую заявку
+            const current = await window.apiRequests.getById(id);
+            if (!current) {
+                throw new Error('Request not found');
+            }
+            // Объединяем с патчем
+            const updated = await window.apiRequests.update(id, { ...current, ...patch });
+            requestsCache = null; // Сбрасываем кэш
+            return updated;
+        } catch (error) {
+            console.error('Failed to update request:', error);
+            showError('Не удалось обновить заявку');
+            throw error;
+        }
     };
 
-    window.deleteNews = function(id){
-        return deleteNewsInternal(id);
+    // Helpers
+    window.getUserById = async function(userId){
+        if (!userId) return null;
+        try {
+            return await window.apiUsers.getById(userId);
+        } catch (error) {
+            console.error('Failed to fetch user by id:', error);
+            return null;
+        }
     };
 
-    window.getStatistics = function(){
-        const users = getUsers();
-        const requests = getRequests();
-        const totalUsers = users.filter(u => u.role === 'resident').length;
-        const verifiedUsers = users.filter(u => u.verification && u.verification.status === 'approved').length;
-        const newRequests = requests.filter(r => !r.status || r.status === 'new').length;
-        const pendingVerifications = users.filter(u => u.verification && u.verification.status === 'pending').length;
-        return { totalUsers, verifiedUsers, newRequests, pendingVerifications };
+    window.saveUser = async function(user){
+        try {
+            if (user.id || user.userId) {
+                const id = user.userId || user.id;
+                const updated = await window.apiUsers.update(id, user);
+                usersCache = null; // Сбрасываем кэш
+                return updated;
+            } else {
+                const created = await window.apiUsers.create(user);
+                usersCache = null; // Сбрасываем кэш
+                return created;
+            }
+        } catch (error) {
+            console.error('Failed to save user:', error);
+            showError('Не удалось сохранить пользователя');
+            throw error;
+        }
+    };
+
+    window.getStatistics = async function(){
+        try {
+            const [users, requests, verifications] = await Promise.all([
+                window.apiUsers.getAll(),
+                window.apiRequests.getAll(),
+                window.apiVerifications.getAll()
+            ]);
+            
+            const totalUsers = users.filter(u => u.role === 'resident').length;
+            const verifiedUsers = verifications.filter(v => v.status === 'approved').length;
+            const newRequests = requests.filter(r => !r.status || r.status === 'new').length;
+            const pendingVerifications = verifications.filter(v => v.status === 'pending').length;
+            
+            return { totalUsers, verifiedUsers, newRequests, pendingVerifications };
+        } catch (error) {
+            console.error('Failed to fetch statistics:', error);
+            return { totalUsers: 0, verifiedUsers: 0, newRequests: 0, pendingVerifications: 0 };
+        }
+    };
+
+    // Функции для работы с верификациями
+    window.getVerifications = async function(){
+        try {
+            const verifications = await window.apiVerifications.getAll();
+            verificationsCache = verifications;
+            return verifications;
+        } catch (error) {
+            console.error('Failed to fetch verifications:', error);
+            showError('Не удалось загрузить верификации');
+            return verificationsCache || [];
+        }
+    };
+
+    window.getVerificationById = async function(id){
+        try {
+            return await window.apiVerifications.getById(id);
+        } catch (error) {
+            console.error('Failed to fetch verification by id:', error);
+            return null;
+        }
+    };
+
+    window.updateVerification = async function(id, verification){
+        try {
+            const updated = await window.apiVerifications.update(id, verification);
+            verificationsCache = null; // Сбрасываем кэш
+            return updated;
+        } catch (error) {
+            console.error('Failed to update verification:', error);
+            showError('Не удалось обновить верификацию');
+            throw error;
+        }
     };
 
 })();

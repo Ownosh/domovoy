@@ -91,6 +91,7 @@
     </div>
 
     <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
     <script src="../js/data.js"></script>
     <script>
         checkAuth();
@@ -100,58 +101,71 @@
             document.getElementById('userAvatar').textContent = currentUser.fullName.charAt(0);
         }
 
-        function loadVerifications(){
-            const users = getUsers().filter(u=> u.verification && u.verification.status === 'pending').sort((a,b)=> new Date(b.verification.submittedAt)-new Date(a.verification.submittedAt));
-            const tbody = document.getElementById('verifyTable');
-            document.getElementById('verifyCount').textContent = users.length;
-            if(users.length===0){
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Заявки не найдены</td></tr>';
-                return;
+        let currentVerificationId = null;
+
+        async function loadVerifications(){
+            try {
+                const verifications = await getVerifications();
+                const pending = verifications.filter(v => v.status === 'pending')
+                    .sort((a,b)=> new Date(b.submittedAt)-new Date(a.submittedAt));
+                
+                const tbody = document.getElementById('verifyTable');
+                document.getElementById('verifyCount').textContent = pending.length;
+                if(pending.length===0){
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Заявки не найдены</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = pending.map(v=>`<tr>
+                    <td>${formatDateShort(v.submittedAt)}</td>
+                    <td>${escapeHtml(v.userName)}</td>
+                    <td>${escapeHtml(v.userEmail)}</td>
+                    <td>кв. ${escapeHtml(v.apartmentNumber)}</td>
+                    <td>
+                        <button class="btn btn-primary btn-icon" onclick="viewVerification('${v.verificationId || v.id}')" title="Просмотр">
+                            <span>🔍</span>
+                        </button>
+                    </td>
+                </tr>`).join('');
+            } catch (error) {
+                console.error('Failed to load verifications:', error);
+                document.getElementById('verifyTable').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Ошибка загрузки верификаций</td></tr>';
             }
-            tbody.innerHTML = users.map(u=>`<tr>
-                <td>${formatDateShort(u.verification.submittedAt)}</td>
-                <td>${escapeHtml(u.fullName)}</td>
-                <td>${escapeHtml(u.email)}</td>
-                <td>кв. ${escapeHtml(u.verification.apartmentNumber)}</td>
-                <td>
-                    <button class="btn btn-primary btn-icon" onclick="viewVerification('${u.id}')" title="Просмотр">
-                        <span>🔍</span>
-                    </button>
-                </td>
-            </tr>`).join('');
         }
 
-        function viewVerification(id){
-            const u = getUserById(id);
-            if(!u) return;
-            currentVerificationUserId = id;
-            document.getElementById('verificationAction').value = '';
-            document.getElementById('verificationComment').value = '';
-            document.getElementById('verificationCommentGroup').style.display = 'none';
-            document.getElementById('applyVerificationBtn').style.display = 'none';
-            document.getElementById('verifyDetails').innerHTML = `
-                <div class="form-group"><label>ФИО</label><input value="${escapeHtml(u.fullName)}" readonly></div>
-                <div class="form-group"><label>Email</label><input value="${escapeHtml(u.email)}" readonly></div>
-                <div class="form-group"><label>Квартира</label><input value="кв. ${escapeHtml(u.verification.apartmentNumber)}" readonly></div>
-                <div class="form-group"><label>Дата подачи</label><input value="${formatDate(u.verification.submittedAt)}" readonly></div>
-                <div class="form-group"><label>Документы</label><textarea rows="6" readonly>${escapeHtml(u.verification.documents || '-')}</textarea></div>
-                <div class="form-group">
-                    <label for="verificationAction">Действие *</label>
-                    <select id="verificationAction" onchange="toggleVerificationComment()">
-                        <option value="">Выберите действие</option>
-                        <option value="approve">Подтвердить верификацию</option>
-                        <option value="reject">Отклонить верификацию</option>
-                    </select>
-                </div>
-                <div id="verificationCommentGroup" style="display:none;" class="form-group">
-                    <label for="verificationComment">Причина отклонения</label>
-                    <textarea id="verificationComment" rows="3" placeholder="Укажите причину отклонения верификации..."></textarea>
-                </div>
-            `;
-            openModal('verifyModal');
+        async function viewVerification(id){
+            try {
+                const verification = await getVerificationById(id);
+                if(!verification) return;
+                
+                currentVerificationId = id;
+                const user = await getUserById(verification.userId);
+                
+                document.getElementById('verifyDetails').innerHTML = `
+                    <input type="hidden" id="verificationId" value="${verification.verificationId || verification.id}">
+                    <div class="form-group"><label>ФИО</label><input value="${escapeHtml(verification.userName || user?.fullName || '-')}" readonly></div>
+                    <div class="form-group"><label>Email</label><input value="${escapeHtml(verification.userEmail || user?.email || '-')}" readonly></div>
+                    <div class="form-group"><label>Квартира</label><input value="кв. ${escapeHtml(verification.apartmentNumber)}" readonly></div>
+                    <div class="form-group"><label>Дата подачи</label><input value="${formatDate(verification.submittedAt)}" readonly></div>
+                    <div class="form-group"><label>Документы</label><textarea rows="6" readonly>${escapeHtml(verification.documentUrl || '-')}</textarea></div>
+                    <div class="form-group">
+                        <label for="verificationAction">Действие *</label>
+                        <select id="verificationAction" onchange="toggleVerificationComment()">
+                            <option value="">Выберите действие</option>
+                            <option value="approve">Подтвердить верификацию</option>
+                            <option value="reject">Отклонить верификацию</option>
+                        </select>
+                    </div>
+                    <div id="verificationCommentGroup" style="display:none;" class="form-group">
+                        <label for="verificationComment">Причина отклонения</label>
+                        <textarea id="verificationComment" rows="3" placeholder="Укажите причину отклонения верификации..."></textarea>
+                    </div>
+                `;
+                openModal('verifyModal');
+            } catch (error) {
+                console.error('Failed to view verification:', error);
+                showError('Не удалось загрузить верификацию');
+            }
         }
-
-        let currentVerificationUserId = null;
 
         function toggleVerificationComment() {
             const action = document.getElementById('verificationAction').value;
@@ -170,8 +184,8 @@
             }
         }
 
-        function applyVerificationAction() {
-            if (!currentVerificationUserId) return;
+        async function applyVerificationAction() {
+            if (!currentVerificationId) return;
             
             const action = document.getElementById('verificationAction').value;
             
@@ -181,53 +195,57 @@
             }
             
             if (action === 'approve') {
-                approve(currentVerificationUserId);
+                await approve(currentVerificationId);
             } else if (action === 'reject') {
                 const comment = document.getElementById('verificationComment').value.trim();
                 if (!comment) {
                     showError('Укажите причину отклонения');
                     return;
                 }
-                reject(currentVerificationUserId, comment);
+                await reject(currentVerificationId, comment);
             }
         }
 
-        function approve(id){
-            const u = getUserById(id);
-            if(!u) return;
-            u.verification.status = 'approved';
-            saveUser(u);
-            showSuccess('Пользователь верифицирован');
-            closeModal('verifyModal');
-            loadVerifications();
+        async function approve(id){
+            try {
+                await updateVerification(id, { status: 'approved' });
+                showSuccess('Пользователь верифицирован');
+                closeModal('verifyModal');
+                await loadVerifications();
+            } catch (error) {
+                showError('Не удалось подтвердить верификацию');
+            }
         }
 
-        function reject(id, comment){
-            const u = getUserById(id);
-            if(!u) return;
-            u.verification.status = 'rejected';
-            if (comment) {
-                u.verification.rejectionReason = comment;
+        async function reject(id, comment){
+            try {
+                await updateVerification(id, { 
+                    status: 'rejected',
+                    rejectionReason: comment
+                });
+                showSuccess('Заявка отклонена');
+                closeModal('verifyModal');
+                await loadVerifications();
+            } catch (error) {
+                showError('Не удалось отклонить верификацию');
             }
-            saveUser(u);
-            showSuccess('Заявка отклонена');
-            closeModal('verifyModal');
-            loadVerifications();
         }
 
         // Поддержка открытия по ссылке ?id=...
-        (function handleDeepLink() {
+        (async function handleDeepLink() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
             if (id) {
                 // дождаться первоначальной отрисовки
-                setTimeout(() => {
-                    viewVerification(id);
-                }, 0);
+                setTimeout(async () => {
+                    await viewVerification(id);
+                }, 500);
             }
         })();
 
-        loadVerifications();
+        (async () => {
+            await loadVerifications();
+        })();
     </script>
 </body>
 </html>

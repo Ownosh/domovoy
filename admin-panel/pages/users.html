@@ -123,6 +123,7 @@
     </div>
 
     <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
     <script src="../js/data.js"></script>
     <script>
         checkAuth();
@@ -134,16 +135,30 @@
         }
 
         let allUsers = [];
+        let allVerifications = [];
 
-        function loadUsers() {
+        async function loadUsers() {
             try {
-                const users = getUsers();
-                if (!users || !Array.isArray(users)) {
-                    console.error('getUsers() не вернул массив');
-                    allUsers = [];
-                } else {
-                    allUsers = users.filter(u => u.role === 'resident');
-                }
+                const [users, verifications] = await Promise.all([
+                    getUsers(),
+                    getVerifications()
+                ]);
+                
+                allUsers = users.filter(u => u.role === 'resident');
+                allVerifications = verifications;
+                
+                // Добавляем информацию о верификации к пользователям
+                allUsers.forEach(user => {
+                    const verification = verifications.find(v => v.userId === user.id || v.userId === user.userId);
+                    if (verification) {
+                        user.verification = {
+                            status: verification.status,
+                            apartmentNumber: verification.apartmentNumber,
+                            submittedAt: verification.submittedAt
+                        };
+                    }
+                });
+                
                 displayUsers(allUsers);
             } catch (error) {
                 console.error('Ошибка при загрузке пользователей:', error);
@@ -233,9 +248,20 @@
             displayUsers(filtered);
         }
 
-        function viewUser(userId) {
-            const user = getUserById(userId);
+        async function viewUser(userId) {
+            const user = await getUserById(userId);
             if (!user) return;
+            
+            // Загружаем верификацию для пользователя
+            const verifications = await getVerifications();
+            const verification = verifications.find(v => v.userId === userId || v.userId === user.userId);
+            if (verification) {
+                user.verification = {
+                    status: verification.status,
+                    apartmentNumber: verification.apartmentNumber,
+                    submittedAt: verification.submittedAt
+                };
+            }
 
             const details = `
                 <div class="form-group">
@@ -289,20 +315,26 @@
             openModal('viewUserModal');
         }
 
-        function toggleUserBlock(userId) {
-            const user = getUserById(userId);
+        async function toggleUserBlock(userId) {
+            const user = await getUserById(userId);
             if (!user) return;
 
             const action = user.isBlocked ? 'разблокировать' : 'заблокировать';
             if (confirmAction(`Вы уверены, что хотите ${action} пользователя ${user.fullName}?`)) {
-                user.isBlocked = !user.isBlocked;
-                saveUser(user);
-                showSuccess(`Пользователь ${user.isBlocked ? 'заблокирован' : 'разблокирован'}`);
-                loadUsers();
+                try {
+                    user.isBlocked = !user.isBlocked;
+                    await saveUser(user);
+                    showSuccess(`Пользователь ${user.isBlocked ? 'заблокирован' : 'разблокирован'}`);
+                    await loadUsers();
+                } catch (error) {
+                    showError('Не удалось обновить статус пользователя');
+                }
             }
         }
 
-        loadUsers();
+        (async () => {
+            await loadUsers();
+        })();
     </script>
 </body>
 </html>
