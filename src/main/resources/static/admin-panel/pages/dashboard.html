@@ -71,8 +71,8 @@
                     <div class="stat-card">
                         <div class="stat-icon orange"><i class="ri-file-list-3-line"></i></div>
                         <div class="stat-info">
-                            <h3 id="newRequests">0</h3>
-                            <p>Новых заявок</p>
+                            <h3 id="allRequests">0</h3>
+                            <p>Заявки</p>
                         </div>
                     </div>
                     
@@ -80,7 +80,7 @@
                         <div class="stat-icon purple"><i class="ri-time-line"></i></div>
                         <div class="stat-info">
                             <h3 id="pendingVerifications">0</h3>
-                            <p>Ожидают верификацию</p>
+                            <p>Заявки на верификацию</p>
                         </div>
                     </div>
                 </div>
@@ -120,8 +120,8 @@
                 <!-- Ожидающие верификации -->
                 <div class="card">
                     <div class="card-header">
-                        <h3>Ожидают верификацию
-                            <span class="meta"><span id="pendingVerificationsCount" class="count">0</span><span class="label">ожидают</span></span>
+                        <h3>Новые заявки на верификацию
+                            <span class="meta"><span id="pendingVerificationsCount" class="count">0</span><span class="label">заявок</span></span>
                         </h3>
                         <a href="verification.html" class="btn btn-primary">Все запросы на верификацию</a>
                     </div>
@@ -186,7 +186,7 @@
                 const stats = await getStatistics();
                 document.getElementById('totalUsers').textContent = stats.totalUsers;
                 document.getElementById('verifiedUsers').textContent = stats.verifiedUsers;
-                document.getElementById('newRequests').textContent = stats.newRequests;
+                document.getElementById('allRequests').textContent = stats.allRequests;
                 document.getElementById('pendingVerifications').textContent = stats.pendingVerifications;
             } catch (error) {
                 console.error('Failed to load statistics:', error);
@@ -234,20 +234,25 @@
             }
         }
 
-        // Загрузка ожидающих верификации
+        // Загрузка новых заявок на верификацию (только pending)
         async function loadPendingVerifications() {
             try {
                 const verifications = await getVerifications();
+                // Показываем только новые (pending) верификации
                 const pending = verifications.filter(v => v.status === 'pending')
                     .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
                     .slice(0, 5);
 
                 const tbody = document.getElementById('pendingVerificationsList');
                 const pendingCountEl = document.getElementById('pendingVerificationsCount');
-                if (pendingCountEl) pendingCountEl.textContent = pending.length;
+                // Счетчик показывает количество новых (pending) заявок
+                if (pendingCountEl) {
+                    const pendingCount = verifications.filter(v => v.status === 'pending').length;
+                    pendingCountEl.textContent = pendingCount;
+                }
                 
                 if (pending.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Нет ожидающих верификацию</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Нет новых заявок на верификацию</td></tr>';
                     return;
                 }
 

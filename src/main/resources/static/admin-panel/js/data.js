@@ -184,13 +184,13 @@
             
             const totalUsers = users.filter(u => u.role === 'resident').length;
             const verifiedUsers = verifications.filter(v => v.status === 'approved').length;
-            const newRequests = requests.filter(r => !r.status || r.status === 'new').length;
-            const pendingVerifications = verifications.filter(v => v.status === 'pending').length;
+            const allRequests = requests.length; // Все заявки, без фильтрации
+            const pendingVerifications = verifications.length; // Все заявки на верификацию
             
-            return { totalUsers, verifiedUsers, newRequests, pendingVerifications };
+            return { totalUsers, verifiedUsers, allRequests, pendingVerifications };
         } catch (error) {
             console.error('Failed to fetch statistics:', error);
-            return { totalUsers: 0, verifiedUsers: 0, newRequests: 0, pendingVerifications: 0 };
+            return { totalUsers: 0, verifiedUsers: 0, allRequests: 0, pendingVerifications: 0 };
         }
     };
 
