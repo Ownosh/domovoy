@@ -295,11 +295,6 @@
                 return;
             }
 
-            // Подтверждение отправки
-            if (!confirmAction(`Отправить уведомление "${notification.title}"?`)) {
-                return;
-            }
-
             try {
                 await saveNotification(notification);
                 showSuccess('Уведомление отправлено');
