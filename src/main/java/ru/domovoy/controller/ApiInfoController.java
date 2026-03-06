@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping
+@RequestMapping("/api")
 @CrossOrigin(origins = "*")
 public class ApiInfoController {
 
@@ -43,6 +43,7 @@ public class ApiInfoController {
         return ResponseEntity.ok(apiInfo);
     }
 }
+
 
 
 

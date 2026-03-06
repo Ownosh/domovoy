@@ -21,3 +21,4 @@ public interface AreaObjectRepository extends JpaRepository<AreaObject, Long> {
 
 
 
+

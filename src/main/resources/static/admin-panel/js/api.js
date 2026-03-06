@@ -5,7 +5,6 @@
     // Вспомогательная функция для выполнения HTTP запросов
     async function apiRequest(endpoint, options = {}) {
         const url = `${API_BASE_URL}${endpoint}`;
-        console.log('API Request URL:', url); // Логирование для отладки
         const defaultOptions = {
             headers: {
                 'Content-Type': 'application/json',
@@ -24,78 +23,17 @@
         try {
             const response = await fetch(url, config);
             
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
+            }
+            
             // Если ответ пустой (например, DELETE 204), возвращаем null
             if (response.status === 204 || response.headers.get('content-length') === '0') {
                 return null;
             }
             
-            // Сначала читаем ответ как текст, чтобы проверить его содержимое
-            const responseText = await response.text();
-            
-            // Проверяем Content-Type
-            const contentType = response.headers.get('content-type') || '';
-            const isJson = contentType.includes('application/json');
-            
-            // Проверяем, не является ли ответ HTML
-            const isHtml = responseText.trim().startsWith('<!DOCTYPE') || 
-                          responseText.trim().startsWith('<html') ||
-                          (contentType.includes('text/html') && !isJson);
-            
-            if (isHtml) {
-                // Если это HTML, значит сервер вернул страницу ошибки
-                if (response.status === 404) {
-                    return null; // Для 404 возвращаем null
-                }
-                throw new Error(`Сервер вернул HTML вместо JSON (HTTP ${response.status}). Возможно, эндпоинт не существует или произошла ошибка на сервере.`);
-            }
-            
-            if (!response.ok) {
-                // Обрабатываем ошибки
-                if (isJson && responseText) {
-                    try {
-                        const errorJson = JSON.parse(responseText);
-                        const errorMessage = errorJson.message || errorJson.error || JSON.stringify(errorJson);
-                        throw new Error(`HTTP ${response.status}: ${errorMessage}`);
-                    } catch (parseError) {
-                        // Если не удалось распарсить как JSON, используем текст
-                        throw new Error(`HTTP ${response.status}: ${responseText.substring(0, 200)}`);
-                    }
-                } else {
-                    throw new Error(`HTTP ${response.status}: ${responseText.substring(0, 200) || response.statusText}`);
-                }
-            }
-            
-            // Если ответ не JSON, возвращаем null для 404
-            if (!isJson) {
-                if (response.status === 404) {
-                    return null;
-                }
-                throw new Error(`Ожидался JSON, но получен ${contentType}. Ответ: ${responseText.substring(0, 100)}`);
-            }
-            
-            // Парсим JSON только если это действительно JSON
-            if (!responseText || responseText.trim() === '') {
-                return null;
-            }
-            
-            try {
-                return JSON.parse(responseText);
-            } catch (parseError) {
-                console.error('Failed to parse JSON:', parseError);
-                console.error('Response length:', responseText.length);
-                console.error('Response text (first 1000 chars):', responseText.substring(0, 1000));
-                if (parseError.message && parseError.message.includes('column')) {
-                    // Пытаемся найти проблемное место
-                    const match = parseError.message.match(/column (\d+)/);
-                    if (match) {
-                        const column = parseInt(match[1]);
-                        const start = Math.max(0, column - 100);
-                        const end = Math.min(responseText.length, column + 100);
-                        console.error('Problem area around column', column, ':', responseText.substring(start, end));
-                    }
-                }
-                throw new Error(`Не удалось распарсить JSON ответ: ${parseError.message}`);
-            }
+            return await response.json();
         } catch (error) {
             console.error('API request failed:', error);
             throw error;
@@ -146,13 +84,27 @@
     }
     
     function mapNewsToApi(news) {
-        return {
+        // Определяем ID автора из разных возможных полей
+        const authorId =
+            news.authorId ||
+            (news.author && news.author.userId) ||
+            news.author;
+
+        const result = {
             title: news.title,
             content: news.content,
             type: news.type,
             imageUrl: news.imageUrl || null,
             isPublished: news.isPublished !== undefined ? news.isPublished : false,
         };
+
+        // Если автор известен – добавляем объект author с userId,
+        // чтобы бекенд смог связать новость с пользователем
+        if (authorId) {
+            result.author = { userId: typeof authorId === 'string' ? parseInt(authorId, 10) : authorId };
+        }
+
+        return result;
     }
     
     function mapRequestFromApi(apiRequest) {
@@ -220,12 +172,13 @@
             if (typeof notification.sentBy === 'object' && notification.sentBy.userId) {
                 sentByValue = { userId: notification.sentBy.userId };
             } else {
-                // Если это просто ID (число или строка)
-                const userId = typeof notification.sentBy === 'string' ? parseInt(notification.sentBy) : notification.sentBy;
-                sentByValue = { userId: userId };
+                const userId = typeof notification.sentBy === 'string'
+                    ? parseInt(notification.sentBy, 10)
+                    : notification.sentBy;
+                sentByValue = { userId };
             }
         }
-        
+
         return {
             title: notification.title,
             message: notification.message,
@@ -254,32 +207,13 @@
     }
     
     function mapVerificationToApi(verification) {
-        const result = {};
-        
-        // Включаем только те поля, которые явно переданы (не undefined)
-        if (verification.apartmentNumber !== undefined) {
-            result.apartmentNumber = verification.apartmentNumber;
-        }
-        if (verification.documentType !== undefined) {
-            result.documentType = verification.documentType;
-        }
-        if (verification.documentUrl !== undefined) {
-            result.documentUrl = verification.documentUrl || null;
-        }
-        if (verification.status !== undefined) {
-            result.status = verification.status;
-        }
-        if (verification.rejectionReason !== undefined) {
-            result.rejectionReason = verification.rejectionReason || null;
-        }
-        if (verification.reviewedBy !== undefined) {
-            result.reviewedBy = verification.reviewedBy ? { userId: verification.reviewedBy } : null;
-        }
-        if (verification.reviewedAt !== undefined) {
-            result.reviewedAt = verification.reviewedAt || null;
-        }
-        
-        return result;
+        return {
+            apartmentNumber: verification.apartmentNumber,
+            documentType: verification.documentType,
+            documentUrl: verification.documentUrl || null,
+            status: verification.status,
+            rejectionReason: verification.rejectionReason || null,
+        };
     }
     
     // API методы для пользователей
@@ -372,11 +306,6 @@
     window.apiRequests = {
         async getAll() {
             const requests = await apiRequest('/requests');
-            // Проверяем, что получили массив
-            if (!Array.isArray(requests)) {
-                console.error('API returned non-array for requests:', requests);
-                return [];
-            }
             return requests.map(mapRequestFromApi);
         },
         
@@ -391,19 +320,19 @@
         },
         
         async create(request) {
-            const apiRequest = mapRequestToApi(request);
+            const requestBody = mapRequestToApi(request);
             const created = await apiRequest('/requests', {
                 method: 'POST',
-                body: JSON.stringify(apiRequest),
+                body: JSON.stringify(requestBody),
             });
             return mapRequestFromApi(created);
         },
         
         async update(id, request) {
-            const apiRequest = mapRequestToApi(request);
+            const requestBody = mapRequestToApi(request);
             const updated = await apiRequest(`/requests/${id}`, {
                 method: 'PUT',
-                body: JSON.stringify(apiRequest),
+                body: JSON.stringify(requestBody),
             });
             return mapRequestFromApi(updated);
         },
